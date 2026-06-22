@@ -41,7 +41,10 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    fetchNews();
+    const init = async () => {
+      await fetchNews();
+    };
+    init();
   }, []);
 
   // Strip HTML tags for empty-check (Tiptap emits '<p></p>' on empty)
