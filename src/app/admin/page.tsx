@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import ClientLightPillar from '@/components/ClientLightPillar';
 import Navbar from '@/components/Navbar';
 import { Trash2, Edit2, Plus, Save, X } from 'lucide-react';
+import RichTextEditor from '@/components/RichTextEditor';
 
 interface NewsItem {
   id: number;
@@ -41,9 +42,12 @@ export default function AdminPage() {
   }, []);
 
   // Obsługa zapisu (Dodawanie lub Edycja)
+  // Strip HTML tags for empty-check (Tiptap emits '<p></p>' on empty)
+  const stripHtml = (html: string) => html.replace(/<[^>]*>/g, '').trim();
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !content) return;
+    if (!title || !stripHtml(content)) return;
 
     if (editingId) {
       // Edycja istniejącego
@@ -133,12 +137,10 @@ export default function AdminPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Treść wpisu</label>
-                <textarea 
-                  required
-                  rows={8}
+                <RichTextEditor
                   value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  className="w-full bg-slate-950/50 border border-white/10 rounded-xl px-4 py-3 text-slate-200 focus:border-red-500 outline-none transition-all resize-none"
+                  onChange={setContent}
+                  placeholder="Wpisz treść wpisu…"
                 />
               </div>
 
@@ -181,7 +183,7 @@ export default function AdminPage() {
                       </span>
                     </div>
                     <h3 className="text-lg font-bold text-slate-200 truncate">{item.title}</h3>
-                    <p className="text-sm text-slate-500 truncate mt-1">{item.content}</p>
+                    <p className="text-sm text-slate-500 truncate mt-1">{item.content.replace(/<[^>]*>/g, '')}</p>
                   </div>
 
                   <div className="flex gap-2 flex-shrink-0">
