@@ -1,8 +1,36 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import { Users, Mail } from 'lucide-react';
 import StarBorder from '@/components/StarBorder';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
 
 export default function Navbar() {
+  const [discordLink, setDiscordLink] = useState('https://discord.gg/ZxgmF7Kr4t');
+
+  useEffect(() => {
+    async function fetchDiscordLink() {
+      try {
+        const { data, error } = await supabase
+          .from('news')
+          .select('*')
+          .eq('category', 'SystemSettings')
+          .eq('title', 'global_settings')
+          .maybeSingle();
+        if (!error && data && data.content) {
+          const val = JSON.parse(data.content);
+          if (val.discord_link) {
+            setDiscordLink(val.discord_link);
+          }
+        }
+      } catch (err) {
+        // Ignorujemy błędy i zostajemy przy domyślnym linku
+      }
+    }
+    fetchDiscordLink();
+  }, []);
+
   return (
     <nav className="relative z-10 flex items-center justify-between px-6 py-8 max-w-7xl mx-auto">
       
@@ -36,7 +64,7 @@ export default function Navbar() {
       <div className="flex items-center gap-8">
         <StarBorder 
           as="a" 
-          href="https://discord.gg/ZxgmF7Kr4t" 
+          href={discordLink} 
           target="_blank"
           rel="noopener noreferrer"
           color="#ff0000" 

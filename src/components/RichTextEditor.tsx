@@ -5,7 +5,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Bold, List, Link2, Smile, Unlink } from 'lucide-react';
+import { Bold, Italic, List, ListOrdered, Link2, Smile, Unlink } from 'lucide-react';
 
 // ─── Emoji Picker ────────────────────────────────────────────────────────────
 
@@ -189,6 +189,15 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
           <Bold className="w-4 h-4" />
         </ToolbarBtn>
 
+        {/* Italic */}
+        <ToolbarBtn
+          active={editor.isActive('italic')}
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+          title="Kursywa (Ctrl+I)"
+        >
+          <Italic className="w-4 h-4" />
+        </ToolbarBtn>
+
         {/* Bullet List */}
         <ToolbarBtn
           active={editor.isActive('bulletList')}
@@ -196,6 +205,15 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
           title="Lista punktowana"
         >
           <List className="w-4 h-4" />
+        </ToolbarBtn>
+
+        {/* Ordered List */}
+        <ToolbarBtn
+          active={editor.isActive('orderedList')}
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          title="Lista numerowana"
+        >
+          <ListOrdered className="w-4 h-4" />
         </ToolbarBtn>
 
         <div className="w-px h-5 bg-slate-700 mx-1" />

@@ -2,8 +2,8 @@
 
 @font-face {
   font-family: 'Logik';
-  src: url('/fonts/Logik-SemiBold.ttf') format('truetype'); /* Ścieżka do Twojego pliku czcionki */
-  font-weight: 600;
+  src: url('/fonts/Logik-SemiBold.ttf') format('truetype');
+  font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
@@ -15,6 +15,45 @@
 
 body {
   font-family: var(--font-sans);
+}
+
+/* Custom styles for Tiptap & News Content (since @tailwindcss/typography is not installed) */
+.prose {
+  font-size: 0.95rem;
+}
+
+.prose strong, .prose b {
+  font-weight: 800 !important;
+  color: #f8fafc !important;
+}
+
+.prose em, .prose i {
+  font-style: italic !important;
+}
+
+.prose ul {
+  list-style-type: disc !important;
+  padding-left: 1.5rem !important;
+  margin-top: 0.75rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.prose ol {
+  list-style-type: decimal !important;
+  padding-left: 1.5rem !important;
+  margin-top: 0.75rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.prose li {
+  margin-top: 0.25rem !important;
+  margin-bottom: 0.25rem !important;
+  display: list-item !important;
+}
+
+.prose p {
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
 }
 
 @keyframes star-movement-bottom {
