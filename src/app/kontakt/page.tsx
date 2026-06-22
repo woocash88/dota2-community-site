@@ -49,7 +49,7 @@ export default function KontaktPage() {
       <Navbar />
 
       {/* CONTACT FORM SECTION */}
-      <section className="relative z-10 max-w-2xl mx-auto px-6 pt-16 pb-20">
+      <section className="relative z-10 max-w-4xl mx-auto px-6 pt-16 pb-20">
         <div className="text-center mb-10">
           <div className="w-12 h-12 bg-red-600/10 rounded-xl flex items-center justify-center text-red-500 border border-red-500/20 mx-auto mb-4">
             <Mail className="w-6 h-6" />
@@ -102,7 +102,7 @@ export default function KontaktPage() {
                 <textarea
                   id="message"
                   required
-                  rows={6}
+                  rows={10}
                   disabled={status === 'loading'}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}

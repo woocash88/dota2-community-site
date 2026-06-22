@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { Calendar } from 'lucide-react';
 
 interface NewsItem {
   id: number;
@@ -38,7 +39,6 @@ export default function NewsPanel() {
   return (
     <section className="relative z-10 max-w-7xl mx-auto px-6">
       <div className="mb-12">
-        {/* Zmiana nagłówków */}
         <h2 className="text-4xl font-extrabold tracking-tight mb-2">Newsy</h2>
         <p className="text-slate-400 text-sm">Najnowsze wieści ze społeczności dota2inhouse.pl</p>
       </div>
@@ -49,32 +49,44 @@ export default function NewsPanel() {
         </div>
       ) : news.length === 0 ? (
         <div className="bg-slate-900/10 border border-white/5 rounded-3xl p-16 text-center backdrop-blur-md">
-          {/* Zmiana tekstu pustego stanu */}
           <h3 className="text-xl font-bold text-slate-300 mb-2">Brak nowych newsów</h3>
           <p className="text-slate-500 text-sm">Wróć tu za jakiś czas, żeby sprawdzić najnowsze ogłoszenia.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="flex flex-col gap-6">
           {news.map((item) => (
-            <div 
-              key={item.id} 
-              className="bg-slate-900/40 border border-slate-800 p-6 rounded-2xl hover:bg-slate-800/50 transition-all cursor-pointer backdrop-blur-sm group flex flex-col"
+            <article
+              key={item.id}
+              className="w-full bg-slate-900/40 border border-slate-800 rounded-2xl overflow-hidden backdrop-blur-sm hover:border-slate-700 transition-all"
             >
-              <div className="flex justify-between items-start mb-4">
+              {/* ── Header sekcja ── */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800/60 bg-slate-900/30">
                 <span className="text-xs text-red-500 font-bold uppercase tracking-widest bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20">
                   {item.category}
                 </span>
-                <span className="text-xs text-slate-500 font-mono font-medium">
-                  {new Date(item.created_at).toLocaleDateString('pl-PL')}
-                </span>
+                <div className="flex items-center gap-1.5 text-slate-500 text-xs font-mono">
+                  <Calendar className="w-3.5 h-3.5" />
+                  {new Date(item.created_at).toLocaleDateString('pl-PL', {
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </div>
               </div>
-              <h3 className="text-xl font-bold mb-3 leading-tight text-slate-200 group-hover:text-red-400 transition-colors">
-                {item.title}
-              </h3>
-              <p className="text-slate-400 text-sm leading-relaxed flex-grow">
-                {item.content}
-              </p>
-            </div>
+
+              {/* ── Body sekcja ── */}
+              <div className="px-6 py-5">
+                <h3 className="text-2xl font-extrabold text-slate-100 mb-4 leading-tight">
+                  {item.title}
+                </h3>
+                <div
+                  className="prose prose-invert prose-sm max-w-none text-slate-300 leading-relaxed
+                    prose-a:text-red-400 prose-a:no-underline hover:prose-a:text-red-300
+                    prose-strong:text-slate-100 prose-ul:text-slate-300"
+                  dangerouslySetInnerHTML={{ __html: item.content }}
+                />
+              </div>
+            </article>
           ))}
         </div>
       )}
