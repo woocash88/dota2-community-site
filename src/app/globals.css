@@ -1,0 +1,18 @@
+@import "tailwindcss"; /* To ładuje Tailwinda w nowej wersji */
+
+@font-face {
+  font-family: 'Logik';
+  src: url('/fonts/Logik-SemiBold.ttf') format('truetype'); /* Ścieżka do Twojego pliku czcionki */
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Nadpisujemy domyślną czcionkę systemową Tailwinda Twoją czcionką */
+:root {
+  --font-sans: 'Logik', sans-serif;
+}
+
+body {
+  font-family: var(--font-sans);
+}
