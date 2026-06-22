@@ -1,7 +1,22 @@
 'use client';
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import * as THREE from 'three';
-import './LightPillar.css';
+
+export interface LightPillarProps {
+  topColor?: string;
+  bottomColor?: string;
+  intensity?: number;
+  rotationSpeed?: number;
+  interactive?: boolean;
+  className?: string;
+  glowAmount?: number;
+  pillarWidth?: number;
+  pillarHeight?: number;
+  noiseIntensity?: number;
+  mixBlendMode?: React.CSSProperties['mixBlendMode'];
+  pillarRotation?: number;
+  quality?: 'low' | 'medium' | 'high';
+}
 
 const LightPillar = ({
   topColor = '#5227FF',
@@ -17,27 +32,111 @@ const LightPillar = ({
   mixBlendMode = 'screen',
   pillarRotation = 0,
   quality = 'high'
-}) => {
-  const containerRef = useRef(null);
-  const rafRef = useRef(null);
-  const rendererRef = useRef(null);
-  const materialRef = useRef(null);
-  const sceneRef = useRef(null);
-  const cameraRef = useRef(null);
-  const geometryRef = useRef(null);
+}: LightPillarProps) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number | null>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const materialRef = useRef<THREE.ShaderMaterial | null>(null);
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const cameraRef = useRef<THREE.OrthographicCamera | null>(null);
+  const geometryRef = useRef<THREE.PlaneGeometry | null>(null);
   const mouseRef = useRef(new THREE.Vector2(0, 0));
   const timeRef = useRef(0);
   const rotationSpeedRef = useRef(rotationSpeed);
   const [webGLSupported, setWebGLSupported] = useState(true);
 
-  useEffect(() => {
-    const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-    if (!gl) {
-      setWebGLSupported(false);
-    }
+  const parseColor = useCallback((hex: string) => {
+    const color = new THREE.Color(hex);
+    return new THREE.Vector3(color.r, color.g, color.b);
   }, []);
 
+  useEffect(() => {
+    const checkWebGL = () => {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      if (!gl) {
+        setWebGLSupported(false);
+      }
+    };
+    checkWebGL();
+  }, []);
+
+  // Uniform updates
+  useEffect(() => {
+    if (materialRef.current) {
+      const color = parseColor(topColor);
+      materialRef.current.uniforms.uTopColor.value.copy(color);
+    }
+  }, [topColor, parseColor]);
+
+  useEffect(() => {
+    if (materialRef.current) {
+      const color = parseColor(bottomColor);
+      materialRef.current.uniforms.uBottomColor.value.copy(color);
+    }
+  }, [bottomColor, parseColor]);
+
+  useEffect(() => {
+    if (materialRef.current) materialRef.current.uniforms.uIntensity.value = intensity;
+  }, [intensity]);
+
+  useEffect(() => {
+    if (materialRef.current) materialRef.current.uniforms.uInteractive.value = interactive;
+  }, [interactive]);
+
+  useEffect(() => {
+    if (materialRef.current) materialRef.current.uniforms.uGlowAmount.value = glowAmount;
+  }, [glowAmount]);
+
+  useEffect(() => {
+    if (materialRef.current) materialRef.current.uniforms.uPillarWidth.value = pillarWidth;
+  }, [pillarWidth]);
+
+  useEffect(() => {
+    if (materialRef.current) materialRef.current.uniforms.uPillarHeight.value = pillarHeight;
+  }, [pillarHeight]);
+
+  useEffect(() => {
+    if (materialRef.current) materialRef.current.uniforms.uNoiseIntensity.value = noiseIntensity;
+  }, [noiseIntensity]);
+
+  useEffect(() => {
+    if (materialRef.current) {
+      const pillarRotRad = (pillarRotation * Math.PI) / 180;
+      materialRef.current.uniforms.uPillarRotCos.value = Math.cos(pillarRotRad);
+      materialRef.current.uniforms.uPillarRotSin.value = Math.sin(pillarRotRad);
+    }
+  }, [pillarRotation]);
+
+  useEffect(() => {
+    rotationSpeedRef.current = rotationSpeed;
+  }, [rotationSpeed]);
+
+  // Mouse interaction
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !interactive || !webGLSupported) return;
+
+    let mouseMoveTimeout: number | null = null;
+    const handleMouseMove = (event: MouseEvent) => {
+      if (mouseMoveTimeout) return;
+      mouseMoveTimeout = window.setTimeout(() => {
+        mouseMoveTimeout = null;
+      }, 16);
+      const rect = container.getBoundingClientRect();
+      const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      mouseRef.current.set(x, y);
+    };
+
+    container.addEventListener('mousemove', handleMouseMove, { passive: true });
+    return () => {
+      container.removeEventListener('mousemove', handleMouseMove);
+      if (mouseMoveTimeout) clearTimeout(mouseMoveTimeout);
+    };
+  }, [interactive, webGLSupported]);
+
+  // Core initialization
   useEffect(() => {
     if (!containerRef.current || !webGLSupported) return;
 
@@ -58,20 +157,20 @@ const LightPillar = ({
     if (isMobile && quality !== 'low') effectiveQuality = 'low';
 
     const qualitySettings = {
-      low: { iterations: 24, waveIterations: 1, pixelRatio: 0.5, precision: 'mediump', stepMultiplier: 1.5 },
-      medium: { iterations: 40, waveIterations: 2, pixelRatio: 0.65, precision: 'mediump', stepMultiplier: 1.2 },
+      low: { iterations: 24, waveIterations: 1, pixelRatio: 0.5, precision: 'mediump' as const, stepMultiplier: 1.5 },
+      medium: { iterations: 40, waveIterations: 2, pixelRatio: 0.65, precision: 'mediump' as const, stepMultiplier: 1.2 },
       high: {
         iterations: 80,
         waveIterations: 4,
         pixelRatio: Math.min(window.devicePixelRatio, 2),
-        precision: 'highp',
+        precision: 'highp' as const,
         stepMultiplier: 1.0
       }
     };
 
     const settings = qualitySettings[effectiveQuality] || qualitySettings.medium;
 
-    let renderer;
+    let renderer: THREE.WebGLRenderer;
     try {
       renderer = new THREE.WebGLRenderer({
         antialias: false,
@@ -81,8 +180,8 @@ const LightPillar = ({
         stencil: false,
         depth: false
       });
-    } catch (error) {
-      setWebGLSupported(false);
+    } catch {
+      setTimeout(() => setWebGLSupported(false), 0);
       return;
     }
 
@@ -90,11 +189,6 @@ const LightPillar = ({
     renderer.setPixelRatio(settings.pixelRatio);
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
-
-    const parseColor = hex => {
-      const color = new THREE.Color(hex);
-      return new THREE.Vector3(color.r, color.g, color.b);
-    };
 
     const vertexShader = `
       varying vec2 vUv;
@@ -224,28 +318,11 @@ const LightPillar = ({
     const mesh = new THREE.Mesh(geometry, material);
     scene.add(mesh);
 
-    let mouseMoveTimeout = null;
-    const handleMouseMove = event => {
-      if (!interactive) return;
-      if (mouseMoveTimeout) return;
-      mouseMoveTimeout = window.setTimeout(() => {
-        mouseMoveTimeout = null;
-      }, 16);
-      const rect = container.getBoundingClientRect();
-      const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-      mouseRef.current.set(x, y);
-    };
-
-    if (interactive) {
-      container.addEventListener('mousemove', handleMouseMove, { passive: true });
-    }
-
     let lastTime = performance.now();
     const targetFPS = effectiveQuality === 'low' ? 30 : 60;
     const frameTime = 1000 / targetFPS;
 
-    const animate = currentTime => {
+    const animate = (currentTime: number) => {
       if (!materialRef.current || !rendererRef.current || !sceneRef.current || !cameraRef.current) return;
 
       const deltaTime = currentTime - lastTime;
@@ -264,12 +341,9 @@ const LightPillar = ({
     };
     rafRef.current = requestAnimationFrame(animate);
 
-    let resizeTimeout = null;
+    let resizeTimeout: number | null = null;
     const handleResize = () => {
-      if (resizeTimeout) {
-        clearTimeout(resizeTimeout);
-      }
-
+      if (resizeTimeout) clearTimeout(resizeTimeout);
       resizeTimeout = window.setTimeout(() => {
         if (!rendererRef.current || !materialRef.current || !containerRef.current) return;
         const newWidth = containerRef.current.clientWidth;
@@ -283,12 +357,9 @@ const LightPillar = ({
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      if (interactive) {
-        container.removeEventListener('mousemove', handleMouseMove);
-      }
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-      }
+      if (resizeTimeout) clearTimeout(resizeTimeout);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+
       if (rendererRef.current) {
         rendererRef.current.dispose();
         rendererRef.current.forceContextLoss();
@@ -306,76 +377,27 @@ const LightPillar = ({
       geometryRef.current = null;
       rafRef.current = null;
     };
-  }, [webGLSupported, quality]);
-
-  useEffect(() => {
-    rotationSpeedRef.current = rotationSpeed;
-  }, [rotationSpeed]);
-
-  useEffect(() => {
-    if (!materialRef.current) return;
-    const parseColor = hex => {
-      const color = new THREE.Color(hex);
-      return new THREE.Vector3(color.r, color.g, color.b);
-    };
-    materialRef.current.uniforms.uTopColor.value = parseColor(topColor);
-  }, [topColor]);
-
-  useEffect(() => {
-    if (!materialRef.current) return;
-    const parseColor = hex => {
-      const color = new THREE.Color(hex);
-      return new THREE.Vector3(color.r, color.g, color.b);
-    };
-    materialRef.current.uniforms.uBottomColor.value = parseColor(bottomColor);
-  }, [bottomColor]);
-
-  useEffect(() => {
-    if (!materialRef.current) return;
-    materialRef.current.uniforms.uIntensity.value = intensity;
-  }, [intensity]);
-
-  useEffect(() => {
-    if (!materialRef.current) return;
-    materialRef.current.uniforms.uInteractive.value = interactive;
-  }, [interactive]);
-
-  useEffect(() => {
-    if (!materialRef.current) return;
-    materialRef.current.uniforms.uGlowAmount.value = glowAmount;
-  }, [glowAmount]);
-
-  useEffect(() => {
-    if (!materialRef.current) return;
-    materialRef.current.uniforms.uPillarWidth.value = pillarWidth;
-  }, [pillarWidth]);
-
-  useEffect(() => {
-    if (!materialRef.current) return;
-    materialRef.current.uniforms.uPillarHeight.value = pillarHeight;
-  }, [pillarHeight]);
-
-  useEffect(() => {
-    if (!materialRef.current) return;
-    materialRef.current.uniforms.uNoiseIntensity.value = noiseIntensity;
-  }, [noiseIntensity]);
-
-  useEffect(() => {
-    if (!materialRef.current) return;
-    const pillarRotRad = (pillarRotation * Math.PI) / 180;
-    materialRef.current.uniforms.uPillarRotCos.value = Math.cos(pillarRotRad);
-    materialRef.current.uniforms.uPillarRotSin.value = Math.sin(pillarRotRad);
-  }, [pillarRotation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [webGLSupported, quality, parseColor]);
 
   if (!webGLSupported) {
     return (
-      <div className={`light-pillar-fallback ${className}`} style={{ mixBlendMode }}>
+      <div
+        className={`w-full h-full absolute top-0 left-0 flex items-center justify-center bg-black/10 text-[#888] text-[14px] ${className}`}
+        style={{ mixBlendMode }}
+      >
         WebGL not supported
       </div>
     );
   }
 
-  return <div ref={containerRef} className={`light-pillar-container ${className}`} style={{ mixBlendMode }} />;
+  return (
+    <div
+      ref={containerRef}
+      className={`w-full h-full absolute top-0 left-0 ${className}`}
+      style={{ mixBlendMode }}
+    />
+  );
 };
 
 export default LightPillar;

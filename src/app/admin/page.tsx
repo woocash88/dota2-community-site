@@ -38,7 +38,10 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    fetchNews();
+    const init = async () => {
+      await fetchNews();
+    };
+    init();
   }, []);
 
   // Obsługa zapisu (Dodawanie lub Edycja)
