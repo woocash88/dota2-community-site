@@ -3,19 +3,10 @@ import { supabase } from '@/lib/supabase';
 import ClientLightPillar from '@/components/ClientLightPillar';
 import RankingControls from '@/components/RankingControls';
 import Navbar from '@/components/Navbar';
+import Image from 'next/image';
+import { PlayerData } from '@/types';
 
 export const revalidate = 3600;
-
-interface PlayerData {
-  id: number;
-  name: string;
-  avatar: string;
-  rankTier: number;
-  leaderboardRank: number | null;
-  winRate: string;
-  mmr: number;
-  trend: number; // <--- NOWE POLE
-}
 
 const estimateMmrFromTier = (tier: number): number => {
   if (!tier || tier === 0) return 0;
@@ -36,37 +27,48 @@ export default async function RankingPage() {
     if (!error && dbPlayers && dbPlayers.length > 0) {
       const activeIds = dbPlayers.map(p => parseInt(p.steam_id, 10));
 
-      const data = await Promise.all(
+      const results = await Promise.allSettled(
         activeIds.map(async (id) => {
-          const profileRes = await fetch(`https://api.opendota.com/api/players/${id}`);
-          const profileData = await profileRes.json();
-          
-          // Ogólny WinRate
-          const wlRes = await fetch(`https://api.opendota.com/api/players/${id}/wl`);
-          const wlData = await wlRes.json();
-          const totalMatches = wlData.win + wlData.lose;
-          const winRate = totalMatches > 0 ? ((wlData.win / totalMatches) * 100).toFixed(1) + '%' : '0%';
-          
-          // Forma z ostatnich 7 dni (Win - Lose)
-          const wl7DaysRes = await fetch(`https://api.opendota.com/api/players/${id}/wl?date=7`);
-          const wl7DaysData = await wl7DaysRes.json();
-          const trend = (wl7DaysData.win || 0) - (wl7DaysData.lose || 0);
+          try {
+            const profileRes = await fetch(`https://api.opendota.com/api/players/${id}`);
+            if (!profileRes.ok) throw new Error('Failed to fetch profile');
+            const profileData = await profileRes.json();
 
-          const openDotaEstimatedMmr = profileData.mmr_estimate?.estimate;
-          const finalMmr = openDotaEstimatedMmr || estimateMmrFromTier(profileData.rank_tier || 0);
+            // Ogólny WinRate
+            const wlRes = await fetch(`https://api.opendota.com/api/players/${id}/wl`);
+            const wlData = await wlRes.json();
+            const totalMatches = (wlData.win || 0) + (wlData.lose || 0);
+            const winRate = totalMatches > 0 ? ((wlData.win / totalMatches) * 100).toFixed(1) + '%' : '0%';
 
-          return {
-            id,
-            name: profileData.profile?.personaname || `Gracz #${id}`,
-            avatar: profileData.profile?.avatarfull || 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg',
-            rankTier: profileData.rank_tier || 0,
-            leaderboardRank: profileData.leaderboard_rank || null,
-            winRate,
-            mmr: finalMmr,
-            trend // <--- PRZEKAZANIE DO KOMPONENTU
-          };
+            // Forma z ostatnich 7 dni (Win - Lose)
+            const wl7DaysRes = await fetch(`https://api.opendota.com/api/players/${id}/wl?date=7`);
+            const wl7DaysData = await wl7DaysRes.json();
+            const trend = (wl7DaysData.win || 0) - (wl7DaysData.lose || 0);
+
+            const openDotaEstimatedMmr = profileData.mmr_estimate?.estimate;
+            const finalMmr = openDotaEstimatedMmr || estimateMmrFromTier(profileData.rank_tier || 0);
+
+            return {
+              id,
+              name: profileData.profile?.personaname || `Gracz #${id}`,
+              avatar: profileData.profile?.avatarfull || 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg',
+              rankTier: profileData.rank_tier || 0,
+              leaderboardRank: profileData.leaderboard_rank || null,
+              winRate,
+              mmr: finalMmr,
+              trend
+            };
+          } catch (err) {
+            console.error(`Error fetching data for player ${id}:`, err);
+            return null;
+          }
         })
       );
+
+      const data = results
+        .filter((res): res is PromiseFulfilledResult<PlayerData | null> => res.status === 'fulfilled')
+        .map(res => res.value)
+        .filter((p): p is PlayerData => p !== null);
 
       players = data.sort((a, b) => b.mmr - a.mmr);
     }
@@ -98,7 +100,13 @@ export default async function RankingPage() {
           <div className="flex-shrink-0">
             <a href="/api/auth/steam" className="inline-flex flex-col items-center gap-3 bg-gradient-to-r from-white/[0.03] to-white/[0.08] border border-white/10 hover:border-red-500/30 hover:from-red-950/20 hover:to-red-900/10 px-6 py-4 rounded-2xl text-base font-bold transition-all group backdrop-blur-sm shadow-xl">
               <span className="text-slate-200 group-hover:text-white transition-colors">Dołącz do rankingu</span>
-              <img src="https://community.cloudflare.steamstatic.com/public/images/signinthroughsteam/sits_01.png" alt="Steam" className="h-6 w-auto group-hover:scale-105 transition-transform" />
+              <Image
+                src="https://community.cloudflare.steamstatic.com/public/images/signinthroughsteam/sits_01.png"
+                alt="Steam"
+                width={180}
+                height={35}
+                className="h-6 w-auto group-hover:scale-105 transition-transform"
+              />
             </a>
           </div>
         </div>

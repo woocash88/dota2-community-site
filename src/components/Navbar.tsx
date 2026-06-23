@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import { Users, Mail } from 'lucide-react';
 import StarBorder from '@/components/StarBorder';
 import Link from 'next/link';
+import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
+import { GlobalSettings } from '@/types';
 
 export default function Navbar() {
   const [discordLink, setDiscordLink] = useState('https://discord.gg/ZxgmF7Kr4t');
@@ -19,12 +21,12 @@ export default function Navbar() {
           .eq('title', 'global_settings')
           .maybeSingle();
         if (!error && data && data.content) {
-          const val = JSON.parse(data.content);
+          const val = JSON.parse(data.content) as GlobalSettings;
           if (val.discord_link) {
             setDiscordLink(val.discord_link);
           }
         }
-      } catch (err) {
+      } catch {
         // Ignorujemy błędy i zostajemy przy domyślnym linku
       }
     }
@@ -37,9 +39,12 @@ export default function Navbar() {
       {/* LEWA STRONA: Logo + Podstrony */}
       <div className="flex items-center gap-10">
         <Link href="/" className="hover:opacity-80 transition-opacity drop-shadow-md flex-shrink-0">
-          <img 
+          <Image
             src="/pd2ih_logo.png" 
             alt="Dota 2 Inhouse Logo" 
+            width={180}
+            height={48}
+            priority
             className="h-12 w-auto object-contain" 
           />
         </Link>
