@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css"; // Tutaj ładują się nasze nowe style z globals.css
 import { supabase } from "@/lib/supabase";
+import { CustomFont, GlobalSettings } from "@/types";
 
 export const dynamic = 'force-dynamic';
 
@@ -23,8 +24,8 @@ async function getSettings() {
         custom_fonts: []
       };
     }
-    return JSON.parse(data.content);
-  } catch (e) {
+    return JSON.parse(data.content) as GlobalSettings;
+  } catch {
     return {
       font_family: 'Logik',
       custom_fonts: []
@@ -46,7 +47,7 @@ export default async function RootLayout({
 
   // Generate CSS for custom fonts
   const fontStyles = customFonts
-    .map((font: any) => `
+    .map((font: CustomFont) => `
       @font-face {
         font-family: '${font.name}';
         src: url(${font.base64}) format('woff2');

@@ -6,14 +6,7 @@ import ClientLightPillar from '@/components/ClientLightPillar';
 import Navbar from '@/components/Navbar';
 import { Trash2, Edit2, Plus, Save, X, Newspaper, ChevronDown, Settings, Upload } from 'lucide-react';
 import RichTextEditor from '@/components/RichTextEditor';
-
-interface NewsItem {
-  id: number;
-  title: string;
-  content: string;
-  category: string;
-  created_at: string;
-}
+import { NewsItem, CustomFont } from '@/types';
 
 export default function AdminPage() {
   const [news, setNews] = useState<NewsItem[]>([]);
@@ -32,7 +25,7 @@ export default function AdminPage() {
   const [showOtherSettings, setShowOtherSettings] = useState(false);
   const [discordLink, setDiscordLink] = useState('https://discord.gg/ZxgmF7Kr4t');
   const [fontFamily, setFontFamily] = useState('Logik');
-  const [customFonts, setCustomFonts] = useState<{ name: string; base64: string }[]>([]);
+  const [customFonts, setCustomFonts] = useState<CustomFont[]>([]);
   const [fontNameInput, setFontNameInput] = useState('');
   const [saveSettingsSuccess, setSaveSettingsSuccess] = useState(false);
   const [saveSettingsError, setSaveSettingsError] = useState<string | null>(null);
@@ -170,9 +163,10 @@ export default function AdminPage() {
 
       setSaveSettingsSuccess(true);
       setTimeout(() => setSaveSettingsSuccess(false), 3000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Błąd zapisu ustawień:', err);
-      setSaveSettingsError(err.message || 'Wystąpił błąd podczas zapisywania do bazy danych.');
+      const errorMessage = err instanceof Error ? err.message : 'Wystąpił błąd podczas zapisywania do bazy danych.';
+      setSaveSettingsError(errorMessage);
     }
   };
 

@@ -3,17 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 // IMPORTUJEMY NOWĄ IKONĘ PŁOMIENIA (Flame)
 import { Search, TrendingUp, TrendingDown, Minus, Flame } from 'lucide-react'; 
-
-interface PlayerData {
-  id: number;
-  name: string;
-  avatar: string;
-  rankTier: number;
-  leaderboardRank: number | null;
-  winRate: string;
-  mmr: number;
-  trend: number;
-}
+import Image from 'next/image';
+import { PlayerData } from '@/types';
 
 interface RankingControlsProps {
   players: PlayerData[];
@@ -92,7 +83,13 @@ export default function RankingControls({ players }: RankingControlsProps) {
                   className="px-5 py-3 hover:bg-white/[0.05] cursor-pointer flex items-center gap-4 transition-colors"
                   onClick={() => handleSuggestionClick(p.name)}
                 >
-                  <img src={p.avatar} alt="Avatar" className="w-8 h-8 rounded-lg border border-white/10" />
+                  <Image
+                    src={p.avatar}
+                    alt="Avatar"
+                    width={32}
+                    height={32}
+                    className="w-8 h-8 rounded-lg border border-white/10"
+                  />
                   <div>
                     <span className="block text-slate-200 font-bold">{p.name}</span>
                     <span className="block text-xs text-slate-500">{getRankName(p.rankTier, p.leaderboardRank)}</span>
@@ -144,15 +141,23 @@ export default function RankingControls({ players }: RankingControlsProps) {
                     #{index + 1}
                   </td>
                   <td className="py-5 px-6 flex items-center gap-4">
-                    <img src={player.avatar} alt="" className="w-12 h-12 rounded-xl border border-white/10 object-cover" />
+                    <Image
+                      src={player.avatar}
+                      alt=""
+                      width={48}
+                      height={48}
+                      className="w-12 h-12 rounded-xl border border-white/10 object-cover"
+                    />
                     <span className="font-bold text-2xl text-slate-200 hover:text-red-400 transition-colors">{player.name}</span>
                   </td>
                   
                   <td className="py-5 px-6">
                     <div className="flex items-center gap-3">
-                      <img 
+                      <Image
                         src={`/ranks/${getRankEnglishName(player.rankTier)}.png`} 
                         alt="Ikona rangi" 
+                        width={40}
+                        height={40}
                         className="w-10 h-10 object-contain drop-shadow-md"
                       />
                       <span className="text-xl font-medium text-slate-300">
