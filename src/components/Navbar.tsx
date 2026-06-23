@@ -57,6 +57,10 @@ export default function Navbar() {
           <StarBorder as="div" color="#ff0000" speed="6s" thickness={2}>
             <Link href="/ranking" className="w-full h-full block">Ranking</Link>
           </StarBorder>
+
+          <StarBorder as="div" color="#ff0000" speed="4s" thickness={2}>
+            <Link href="/hall-of-fame" className="w-full h-full block">Hall of Fame</Link>
+          </StarBorder>
         </div>
       </div>
 

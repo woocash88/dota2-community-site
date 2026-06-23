@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import ClientLightPillar from '@/components/ClientLightPillar';
 import Navbar from '@/components/Navbar';
-import { Trash2, Edit2, Plus, Save, X, Newspaper, ChevronDown, Settings, Upload } from 'lucide-react';
+import { Trash2, Edit2, Plus, Save, X, Newspaper, ChevronDown, Settings, Upload, Trophy } from 'lucide-react';
 import RichTextEditor from '@/components/RichTextEditor';
 
 interface NewsItem {
@@ -36,6 +36,41 @@ export default function AdminPage() {
   const [fontNameInput, setFontNameInput] = useState('');
   const [saveSettingsSuccess, setSaveSettingsSuccess] = useState(false);
   const [saveSettingsError, setSaveSettingsError] = useState<string | null>(null);
+
+  // ── Hall of Fame state ──
+  const [showHallOfFame, setShowHallOfFame] = useState(false);
+
+  // Form fields
+  const [hofTournamentName, setHofTournamentName] = useState('');
+  const [hofTournamentDate, setHofTournamentDate] = useState('');
+  const [hofTournamentId, setHofTournamentId] = useState('');
+  const [hofDotabuffLink, setHofDotabuffLink] = useState('');
+
+  // 5 main players + 1 substitute (optional — excluded if name is empty)
+  const initialPlayers = () =>
+    Array.from({ length: 6 }, (_, i) => ({
+      name: '',
+      friendId: '',
+      isSubstitute: i === 5,
+    }));
+  const [hofPlayers, setHofPlayers] = useState(initialPlayers);
+
+  interface HofTournamentRow {
+    id: string;
+    tournament_name: string;
+    tournament_date: string;
+    tournament_id: string;
+    dotabuff_link: string;
+    players: { name: string; friend_id?: number; is_substitute: boolean }[];
+    created_at: string;
+  }
+
+  // Existing tournaments list
+  const [hofTournaments, setHofTournaments] = useState<HofTournamentRow[]>([]);
+  const [hofLoading, setHofLoading] = useState(false);
+  const [hofSaving, setHofSaving] = useState(false);
+  const [hofSuccess, setHofSuccess] = useState(false);
+  const [hofError, setHofError] = useState<string | null>(null);
 
   // Pobieranie newsów (z wykluczeniem wpisu konfiguracyjnego)
   const fetchNews = async () => {
@@ -74,6 +109,7 @@ export default function AdminPage() {
     const init = async () => {
       await fetchNews();
       await fetchSettings();
+      await fetchHofTournaments();
     };
     init();
   }, []);
@@ -217,6 +253,88 @@ export default function AdminPage() {
     }
   };
 
+  // ── Hall of Fame functions ──
+
+  const fetchHofTournaments = async () => {
+    setHofLoading(true);
+    const { data, error } = await supabase
+      .from('hall_of_fame_tournaments')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (!error && data) setHofTournaments(data);
+    setHofLoading(false);
+  };
+
+  const resetHofForm = () => {
+    setHofTournamentName('');
+    setHofTournamentDate('');
+    setHofTournamentId('');
+    setHofDotabuffLink('');
+    setHofPlayers(initialPlayers());
+    setHofSuccess(false);
+    setHofError(null);
+  };
+
+  const handleHofPlayerChange = (
+    index: number,
+    field: 'name' | 'friendId',
+    value: string,
+  ) => {
+    setHofPlayers((prev) =>
+      prev.map((p, i) => (i === index ? { ...p, [field]: value } : p)),
+    );
+  };
+
+  const handleHofSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setHofSaving(true);
+    setHofError(null);
+    setHofSuccess(false);
+
+    try {
+      // Build players JSONB array — skip rows with empty name (optional substitute)
+      const playersJson = hofPlayers
+        .filter((p) => p.name.trim() !== '')
+        .map((p) => ({
+          name: p.name.trim(),
+          ...(p.friendId.trim()
+            ? { friend_id: Number(p.friendId.trim()) }
+            : {}),
+          is_substitute: p.isSubstitute,
+        }));
+
+      const { error: insertError } = await supabase
+        .from('hall_of_fame_tournaments')
+        .insert([
+          {
+            tournament_name: hofTournamentName.trim(),
+            tournament_date: hofTournamentDate.trim(),
+            tournament_id: hofTournamentId.trim(),
+            dotabuff_link: hofDotabuffLink.trim(),
+            players: playersJson,
+          },
+        ]);
+
+      if (insertError) throw insertError;
+
+      setHofSuccess(true);
+      setTimeout(() => setHofSuccess(false), 3000);
+      resetHofForm();
+      fetchHofTournaments();
+    } catch (err: any) {
+      console.error('Błąd zapisu turnieju:', err);
+      setHofError(err.message || 'Wystąpił błąd podczas zapisywania.');
+    } finally {
+      setHofSaving(false);
+    }
+  };
+
+  const handleHofDelete = async (id: string) => {
+    if (!window.confirm('Na pewno chcesz usunąć ten turniej?')) return;
+    await supabase.from('hall_of_fame_tournaments').delete().eq('id', id);
+    fetchHofTournaments();
+  };
+
   return (
     <main className="relative min-h-screen bg-[#050505] text-slate-100 overflow-x-hidden">
 
@@ -281,6 +399,27 @@ export default function AdminPage() {
           >
             <Settings className="w-4 h-4" />
             Inne (Ustawienia)
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (showHallOfFame) {
+                setShowHallOfFame(false);
+              } else {
+                setShowHallOfFame(true);
+                resetForm();
+                setShowOtherSettings(false);
+              }
+            }}
+            className={`inline-flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm transition-all border ${
+              showHallOfFame
+                ? 'bg-red-600/20 border-red-500/40 text-red-400'
+                : 'bg-slate-900/60 border-slate-700 text-slate-300 hover:bg-slate-800 hover:border-slate-600'
+            }`}
+          >
+            <Trophy className="w-4 h-4" />
+            Dodaj zwycięzców
           </button>
         </div>
 
@@ -443,6 +582,220 @@ export default function AdminPage() {
                 </button>
               </div>
             </form>
+          </div>
+        )}
+
+        {/* ── Hall of Fame ── */}
+        {showHallOfFame && (
+          <div className="mb-10 bg-slate-900/40 border border-slate-700 rounded-3xl p-6 lg:p-8 backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold flex items-center gap-2 text-slate-200">
+                <Trophy className="w-5 h-5 text-amber-500" /> Dodaj zwycięzców
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowHallOfFame(false)}
+                className="p-2 rounded-xl text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-all"
+                title="Zamknij"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleHofSubmit} className="space-y-6">
+              {/* Tournament info row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    Nazwa turnieju
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={hofTournamentName}
+                    onChange={(e) => setHofTournamentName(e.target.value)}
+                    placeholder="PDL Season 1: Winter Classic 2024"
+                    className="w-full bg-slate-950/50 border border-white/10 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-600 focus:border-amber-500 outline-none transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    Data turnieju
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={hofTournamentDate}
+                    onChange={(e) => setHofTournamentDate(e.target.value)}
+                    placeholder="Grudzień 2024"
+                    className="w-full bg-slate-950/50 border border-white/10 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-600 focus:border-amber-500 outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    ID turnieju (Dotabuff)
+                  </label>
+                  <input
+                    type="text"
+                    value={hofTournamentId}
+                    onChange={(e) => setHofTournamentId(e.target.value)}
+                    placeholder="np. 12345"
+                    className="w-full bg-slate-950/50 border border-white/10 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-600 focus:border-amber-500 outline-none transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    Link Dotabuff (opcjonalnie)
+                  </label>
+                  <input
+                    type="url"
+                    value={hofDotabuffLink}
+                    onChange={(e) => setHofDotabuffLink(e.target.value)}
+                    placeholder="https://www.dotabuff.com/esports/tournaments/..."
+                    className="w-full bg-slate-950/50 border border-white/10 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-600 focus:border-amber-500 outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Players section */}
+              <div className="border-t border-white/[0.07] pt-6">
+                <h3 className="text-lg font-bold text-slate-300 mb-4">Zawodnicy</h3>
+
+                <div className="space-y-3">
+                  {hofPlayers.map((player, index) => (
+                    <div
+                      key={index}
+                      className={`flex items-center gap-3 ${
+                        player.isSubstitute
+                          ? 'bg-amber-500/5 border border-amber-500/10 rounded-xl p-3'
+                          : ''
+                      }`}
+                    >
+                      <span className="text-xs font-bold text-slate-500 w-24 flex-shrink-0">
+                        {player.isSubstitute
+                          ? 'Rezerwowy'
+                          : `Gracz ${index + 1}`}
+                      </span>
+                      <input
+                        type="text"
+                        required
+                        value={player.name}
+                        onChange={(e) =>
+                          handleHofPlayerChange(index, 'name', e.target.value)
+                        }
+                        placeholder="Nick"
+                        className="flex-1 bg-slate-950/50 border border-white/10 rounded-xl px-3 py-2.5 text-slate-200 placeholder-slate-600 focus:border-amber-500 outline-none transition-all text-sm"
+                      />
+                      <input
+                        type="text"
+                        value={player.friendId}
+                        onChange={(e) =>
+                          handleHofPlayerChange(
+                            index,
+                            'friendId',
+                            e.target.value,
+                          )
+                        }
+                        placeholder="Dota Friend ID (opcjonalne)"
+                        className="flex-1 bg-slate-950/50 border border-white/10 rounded-xl px-3 py-2.5 text-slate-200 placeholder-slate-600 focus:border-amber-500 outline-none transition-all text-sm"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Feedback messages */}
+              {hofSuccess && (
+                <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm px-4 py-3 rounded-xl">
+                  Turniej został zapisany!
+                </div>
+              )}
+
+              {hofError && (
+                <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm p-4 rounded-xl">
+                  <p className="font-bold">Błąd zapisu: {hofError}</p>
+                </div>
+              )}
+
+              {/* Form buttons */}
+              <div className="flex gap-3 pt-3 border-t border-white/[0.07]">
+                <button
+                  type="submit"
+                  disabled={hofSaving}
+                  className="flex items-center gap-2 bg-amber-600 hover:bg-amber-500 disabled:bg-amber-600/50 text-white font-bold py-3 px-6 rounded-xl transition-all"
+                >
+                  {hofSaving ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Zapisywanie...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" /> Zapisz turniej
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowHallOfFame(false);
+                    resetHofForm();
+                  }}
+                  className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 px-6 rounded-xl transition-all"
+                >
+                  <X className="w-4 h-4" /> Zamknij
+                </button>
+              </div>
+            </form>
+
+            {/* Existing tournaments list */}
+            <div className="mt-8 border-t border-white/[0.07] pt-6">
+              <h3 className="text-lg font-bold text-slate-300 mb-4 flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-amber-500" />
+                Zapisane turnieje
+              </h3>
+
+              {hofLoading ? (
+                <div className="flex items-center gap-3 text-slate-500 py-6">
+                  <div className="w-5 h-5 border-2 border-slate-600 border-t-transparent rounded-full animate-spin" />
+                  Ładowanie...
+                </div>
+              ) : hofTournaments.length === 0 ? (
+                <div className="bg-slate-900/20 border border-white/5 rounded-2xl p-8 text-center text-slate-500">
+                  Brak zapisanych turniejów.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {hofTournaments.map((t: HofTournamentRow) => (
+                    <div
+                      key={t.id}
+                      className="bg-slate-900/20 border border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center hover:bg-slate-800/30 transition-all"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-base font-bold text-slate-200 truncate">
+                          {t.tournament_name}
+                        </h4>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {t.tournament_date} &middot;{' '}
+                          {t.players?.length ?? 0} zawodnik
+                          {(t.players?.length ?? 0) !== 1 ? 'ów' : ''}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleHofDelete(t.id)}
+                        className="bg-slate-800 hover:bg-red-600/20 text-red-400 p-3 rounded-xl transition-all border border-transparent hover:border-red-500/30 flex-shrink-0"
+                        title="Usuń"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
