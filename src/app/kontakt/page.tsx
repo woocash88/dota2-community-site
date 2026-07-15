@@ -37,7 +37,7 @@ export default function KontaktPage() {
   };
 
   return (
-    <main className="relative min-h-screen bg-[#050505] text-slate-100 overflow-x-hidden">
+    <main className="relative bg-[#050505] text-slate-100 overflow-x-hidden">
       
       {/* BACKGROUND */}
       <div className="absolute inset-0 z-0 pointer-events-none opacity-60">
@@ -49,7 +49,7 @@ export default function KontaktPage() {
       <Navbar />
 
       {/* CONTACT FORM SECTION */}
-      <section className="relative z-10 max-w-4xl mx-auto px-6 pt-16 pb-20">
+      <section className="relative z-10 max-w-4xl mx-auto px-6 pt-[30px] pb-10">
         <div className="text-center mb-10">
           <div className="w-12 h-12 bg-red-600/10 rounded-xl flex items-center justify-center text-red-500 border border-red-500/20 mx-auto mb-4">
             <Mail className="w-6 h-6" />

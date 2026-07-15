@@ -1,0 +1,30 @@
+.glare-hover {
+  width: 100%;
+  height: 100%;
+  background: var(--gh-bg, transparent);
+  border-radius: var(--gh-br, 12px);
+  border: 1px solid var(--gh-border, transparent);
+  overflow: hidden;
+  position: relative;
+}
+
+.glare-hover::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    var(--gh-angle, -30deg),
+    hsla(0, 0%, 0%, 0) 40%,
+    var(--gh-rgba, rgba(255, 0, 0, 0.3)) 50%,
+    hsla(0, 0%, 0%, 0) 60%
+  );
+  transition: transform var(--gh-duration, 500ms) ease;
+  transform: translate(-100%, -100%);
+  pointer-events: none;
+  z-index: 2;
+  mix-blend-mode: plus-lighter; /* Sprawi, że czerwony błysk będzie ładnie świecił na ciemnych okładkach */
+}
+
+.glare-hover:hover::before {
+  transform: translate(100%, 100%);
+}

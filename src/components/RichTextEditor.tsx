@@ -4,6 +4,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
+import { TextStyle, FontFamily } from '@tiptap/extension-text-style';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Bold, Italic, List, ListOrdered, Link2, Smile, Unlink } from 'lucide-react';
 
@@ -108,6 +109,10 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
         blockquote: false,
         codeBlock: false,
         horizontalRule: false,
+      }),
+      TextStyle,
+      FontFamily.configure({
+        types: ['textStyle'],
       }),
       Link.configure({
         openOnClick: false,
@@ -215,6 +220,31 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
         >
           <ListOrdered className="w-4 h-4" />
         </ToolbarBtn>
+
+        <div className="w-px h-5 bg-slate-700 mx-1" />
+
+        {/* Font Family */}
+        <select
+          value={editor.getAttributes('textStyle').fontFamily || ''}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val) {
+              editor.chain().focus().setFontFamily(val).run();
+            } else {
+              editor.chain().focus().unsetFontFamily().run();
+            }
+          }}
+          className="bg-slate-800/80 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-300 font-medium outline-none focus:border-red-500/50 transition-all cursor-pointer"
+        >
+          <option value="">Domyślna</option>
+          <option value="Arial">Arial</option>
+          <option value="Georgia">Georgia</option>
+          <option value="'Times New Roman'">Times New Roman</option>
+          <option value="'Courier New'">Courier New</option>
+          <option value="Verdana">Verdana</option>
+          <option value="Impact">Impact</option>
+          <option value="'Comic Sans MS'">Comic Sans MS</option>
+        </select>
 
         <div className="w-px h-5 bg-slate-700 mx-1" />
 

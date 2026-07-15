@@ -1,10 +1,10 @@
 import Navbar from '@/components/Navbar';
-import ClientLightPillar from '@/components/ClientLightPillar';
+import LightRays from '@/components/ui/LightRays';
 import TrophyRoom, { type TournamentData, type PlayerInfo } from '@/components/TrophyRoom';
 import { supabase } from '@/lib/supabase';
 
 // ---------------------------------------------------------------------------
-// Types for the OpenDota API response
+// Types
 // ---------------------------------------------------------------------------
 
 interface OpenDotaProfile {
@@ -15,10 +15,6 @@ interface OpenDotaProfile {
 interface OpenDotaResponse {
   profile: OpenDotaProfile | null;
 }
-
-// ---------------------------------------------------------------------------
-// Shape of a row in the hall_of_fame_tournaments table
-// ---------------------------------------------------------------------------
 
 interface DbPlayer {
   name: string;
@@ -32,7 +28,9 @@ interface DbTournament {
   tournament_date: string;
   tournament_id: string;
   dotabuff_link: string;
+  team_name: string;
   players: DbPlayer[];
+  image_url: string | null; // ← kolumna z Supabase Storage
 }
 
 // ---------------------------------------------------------------------------
@@ -63,44 +61,41 @@ async function fetchPlayer(friendId: number): Promise<PlayerInfo> {
 // ---------------------------------------------------------------------------
 
 export default async function HallOfFamePage() {
-  // 1. Fetch all tournaments from Supabase
   const { data: dbTournaments, error } = await supabase
     .from('hall_of_fame_tournaments')
     .select('*')
-    .order('created_at', { ascending: false });
+    .eq('status', 'published')
+    .order('tournament_date', { ascending: false });
 
   if (error || !dbTournaments) {
     console.error('Failed to fetch hall of fame tournaments:', error?.message);
   }
 
-  const tournaments: DbTournament[] = dbTournaments ?? [];
+  const tournaments: DbTournament[] = (dbTournaments ?? []) as DbTournament[];
 
-  // 2. Collect all unique friend_ids that exist across all tournaments
+  // Collect unique friend_ids
   const allFriendIds = new Set<number>();
   for (const t of tournaments) {
     for (const p of t.players) {
-      if (p.friend_id != null) {
-        allFriendIds.add(p.friend_id);
-      }
+      if (p.friend_id != null) allFriendIds.add(p.friend_id);
     }
   }
 
-  // 3. Fetch OpenDota data for all unique friend_ids (deduped)
+  // Fetch OpenDota profiles
   const playerInfoMap = new Map<number, PlayerInfo>();
-  const results = await Promise.all(
-    Array.from(allFriendIds).map(fetchPlayer),
-  );
+  const results = await Promise.all(Array.from(allFriendIds).map(fetchPlayer));
   for (const info of results) {
     playerInfoMap.set(info.friendId!, info);
   }
 
-  // 4. Shape data for TrophyRoom
+  // Shape data — image_url from Supabase has full priority
   const tournamentData: TournamentData[] = tournaments.map((t) => ({
     name: t.tournament_name,
     date: t.tournament_date,
-    teamName: t.players.find((p) => !p.is_substitute)?.name ?? '',
+    teamName: t.team_name || (t.players.find((p) => !p.is_substitute)?.name ?? ''),
     dotabuffLink: t.dotabuff_link,
     tournamentId: t.tournament_id,
+    imageUrl: t.image_url ?? null,
     players: t.players.map((p) => {
       const fetched = p.friend_id != null ? playerInfoMap.get(p.friend_id) : undefined;
       return {
@@ -117,26 +112,26 @@ export default async function HallOfFamePage() {
     <main className="relative min-h-screen bg-[#050505] text-slate-100 overflow-x-hidden">
       {/* Background */}
       <div className="absolute inset-0 z-0 pointer-events-none opacity-60">
-        <ClientLightPillar
-          topColor="#ff0000"
-          bottomColor="#ff5500"
-          intensity={0.7}
-          rotationSpeed={0.2}
-          glowAmount={0.002}
-          pillarWidth={2.5}
-          pillarHeight={0.3}
-          noiseIntensity={0.5}
-          pillarRotation={90}
-          interactive={false}
-          mixBlendMode="screen"
+        <LightRays
+          raysOrigin="top-center"
+          raysColor="#ffffff"
+          raysSpeed={1}
+          lightSpread={0.8}
+          rayLength={1.5}
+          followMouse={true}
+          mouseInfluence={0.1}
+          noiseAmount={0.05}
+          distortion={0.03}
+          pulsating={false}
+          fadeDistance={1.2}
+          saturation={1.0}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#050505]/50 to-[#050505]" />
       </div>
 
       <Navbar />
 
-      {/* Page heading */}
-      <section className="relative z-10 text-center pt-16 pb-8 px-6">
+      <section className="relative z-10 text-center pt-[30px] pb-8 px-6">
         <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight mb-4 drop-shadow-lg">
           Hall of Fame
         </h1>

@@ -22,6 +22,7 @@ export default function NewsPanel() {
         const { data, error } = await supabase
           .from('news')
           .select('*')
+          .eq('status', 'published')
           .neq('category', 'SystemSettings')
           .order('created_at', { ascending: false });
 

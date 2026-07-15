@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css"; // Tutaj ładują się nasze nowe style z globals.css
 import { supabase } from "@/lib/supabase";
+import Footer from "@/components/Footer";
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +25,7 @@ async function getSettings() {
       };
     }
     return JSON.parse(data.content);
-  } catch (e) {
+  } catch {
     return {
       font_family: 'Logik',
       custom_fonts: []
@@ -79,6 +80,7 @@ export default async function RootLayout({
       </head>
       <body className="antialiased bg-[#050505]">
         {children}
+        <Footer />
       </body>
     </html>
   );

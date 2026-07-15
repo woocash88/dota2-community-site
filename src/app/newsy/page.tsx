@@ -27,7 +27,7 @@ export default function NewsyPage() {
       <Navbar />
 
       {/* NEWSY CONTENT */}
-      <div className="pt-10 pb-20">
+      <div className="pt-[30px] pb-20">
         <NewsPanel />
       </div>
 

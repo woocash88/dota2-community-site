@@ -2,3 +2,23 @@
 
 [cmd]: https://commandcode.ai/
 
+# css
+- Use Tailwind's group-hover CSS pattern (group-hover:opacity-100 with opacity-0 base, absolute positioning) instead of React state-based visibility (useState + onMouseEnter/onMouseLeave) for tooltip hover interactions. Confidence: 0.65
+
+# border-glow
+- Use BorderGlow's `backgroundColor` and `borderRadius` props instead of applying background, border, or border-radius classes to the inner wrapper div; the inner wrapper should be a transparent layout-only container (backdrop-blur-md p-5 flex flex-col h-full). Confidence: 0.70
+- Remove the static base `border` from `.border-glow-card` in BorderGlow.css (set to `border: none`) to avoid visual conflict between the static outline and the animated colored glow border. Confidence: 0.70
+- Replace the stacked 6-layer box-shadow on `.border-glow-card` with a single subtle shadow (`rgba(0, 0, 0, 0.4) 0px 8px 24px`) to avoid a visible glow/outline around card edges on dark page backgrounds. Confidence: 0.70
+
+# date-format
+- Format dates as dd-mm-yyyy using a helper: `const formatDate = (dateStr: string) => { const d = new Date(dateStr); const day = String(d.getDate()).padStart(2, '0'); const month = String(d.getMonth() + 1).padStart(2, '0'); const year = d.getFullYear(); return `${day}-${month}-${year}`; }`. Confidence: 0.65
+
+# ui-patterns
+- Use the existing InfoTooltip component (custom (i) icon popup) instead of native HTML title attributes for table header tooltips, matching the existing MMR column pattern. Confidence: 0.70
+
+# data-fetching
+- Fetch external links (partner, social media, discord) from the database (SystemSettings/global_settings config) instead of hardcoding them, so administrators can manage them dynamically. Confidence: 0.80
+
+# css
+- Use slide-in `::before` pseudo-element animation for all skewed buttons: nav tiles slide in `#3E3C40`, hero buttons slide in `#141414` (both use `right: 100%` → `left: 0; right: 0` transition). Confidence: 0.65
+

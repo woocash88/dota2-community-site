@@ -1,0 +1,72 @@
+src
++---app
+|   |   favicon.ico
+|   |   globals.css
+|   |   layout.tsx
+|   |   page.tsx
+|   |   
+|   +---admin
+|   |       actions.ts
+|   |       page.tsx
+|   |       
+|   +---api
+|   |   +---admin
+|   |   |   +---hof
+|   |   |   |       route.ts
+|   |   |   |       
+|   |   |   \---hof-banner
+|   |   |           route.ts
+|   |   |           
+|   |   +---auth
+|   |   |   \---steam
+|   |   |       |   route.ts
+|   |   |       |   
+|   |   |       \---callback
+|   |   |               route.ts
+|   |   |               
+|   |   \---contact
+|   |           route.ts
+|   |           
+|   +---basher
+|   |       page.tsx
+|   |       
+|   +---hall-of-fame
+|   |       page.tsx
+|   |       
+|   +---kontakt
+|   |       page.tsx
+|   |       
+|   +---newsy
+|   |       page.tsx
+|   |       
+|   +---ranking
+|   |       page.tsx
+|   |       
+|   \---streamy
+|           page.tsx
+|           
++---components
+|   |   BasherMagazine.tsx
+|   |   ClientLightPillar.tsx
+|   |   GlareHover.css
+|   |   LightPillar.tsx
+|   |   Navbar.tsx
+|   |   NewsPanel.tsx
+|   |   RankingControls.tsx
+|   |   RichTextEditor.tsx
+|   |   StarBorder.tsx
+|   |   TrophyRoom.tsx
+|   |   
+|   \---ui
+|           BorderGlow.css
+|           BorderGlow.tsx
+|           GlareHover.css
+|           GlareHover.tsx
+|           LaserFlow.tsx
+|           LightRays.css
+|           LightRays.tsx
+|           
+\---lib
+        heroes.ts
+        supabase-admin.ts
+        supabase.ts

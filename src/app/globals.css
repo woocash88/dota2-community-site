@@ -1,8 +1,29 @@
 @import "tailwindcss"; /* To ładuje Tailwinda w nowej wersji */
 
+@theme {
+  --font-logik-bold: 'Logik Bold', sans-serif;
+  --font-logik-extended: 'Logik Extended', sans-serif;
+}
+
 @font-face {
   font-family: 'Logik';
   src: url('/fonts/Logik-SemiBold.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Logik Bold';
+  src: url('/fonts/Logik-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Logik Extended';
+  src: url('/fonts/Logik-Extended.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -56,32 +77,109 @@ body {
   margin-bottom: 0.5rem !important;
 }
 
-@keyframes star-movement-bottom {
-  0% {
-    transform: translate(0%, 0%);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(-100%, 0%);
+/* ─── HERO BUTTONS ─── */
+.btn-hero {
+    background: #E7000B;
+    color: #fff;
+    border: none;
+    padding: 12px 32px;
+    font-size: 1rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    transform: skew(-12deg);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    transition: all 0.3s ease;
+}
+.btn-hero span {
+    display: flex;
+    transform: skew(12deg);
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+.btn-hero::before {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0; right: 100%; left: 0;
+    background: #141414;
     opacity: 0;
-  }
+    z-index: -1;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
+.btn-hero:hover::before { left: 0; right: 0; opacity: 1; }
 
-@keyframes star-movement-top {
-  0% {
-    transform: translate(0%, 0%);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(100%, 0%);
+/* ─── NAVBAR TILES ─── */
+.btn-nav-tile {
+    background: rgba(26, 24, 26, 0.7);
+    backdrop-filter: blur(4px);
+    color: #fff;
+    border: none;
+    height: 100%;
+    width: 100%;
+    font-weight: 700;
+    text-transform: uppercase;
+    transform: skew(-12deg);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-nav-tile span {
+    display: flex;
+    transform: skew(12deg);
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    white-space: nowrap;
+}
+.btn-nav-tile::before {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0; right: 100%; left: 0;
+    background: #3E3C40;
     opacity: 0;
-  }
+    z-index: -1;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-nav-tile:hover { color: #fff; }
+.btn-nav-tile:hover::before { left: 0; right: 0; opacity: 1; }
+
+/* ─── Enhanced neon red glow wrapper ─── */
+.glow-container {
+  filter: drop-shadow(0 0 8px rgba(220, 38, 38, 0.3));
+  transition: filter 0.3s ease;
+}
+.glow-container:hover {
+  filter: drop-shadow(0 0 15px rgba(220, 38, 38, 0.5));
 }
 
-@utility animate-star-movement-bottom {
-  animation: star-movement-bottom linear infinite alternate;
+/* ─── Stats bar red border glow ─── */
+.stats-glow {
+  box-shadow:
+    0 0 6px rgba(255, 0, 0, 0.4),
+    0 0 15px rgba(255, 0, 0, 0.2),
+    0 0 30px rgba(255, 0, 0, 0.1);
+  border-color: rgba(255, 0, 0, 0.3);
 }
 
-@utility animate-star-movement-top {
-  animation: star-movement-top linear infinite alternate;
+/* --- TESTIMONIAL MARQUEE --- */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 45s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
 }

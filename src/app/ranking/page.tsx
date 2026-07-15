@@ -3,18 +3,22 @@ import { supabase } from '@/lib/supabase';
 import ClientLightPillar from '@/components/ClientLightPillar';
 import RankingControls from '@/components/RankingControls';
 import Navbar from '@/components/Navbar';
+import SteamLinkHandler from '@/components/SteamLinkHandler';
+import JoinSteamButton from '@/components/JoinSteamButton';
 
-export const revalidate = 3600;
+
+export const revalidate = 259200;
 
 interface PlayerData {
   id: number;
+  steam_id: string;
   name: string;
   avatar: string;
   rankTier: number;
   leaderboardRank: number | null;
   winRate: string;
   mmr: number;
-  trend: number; // <--- NOWE POLE
+  trend: number;
 }
 
 const estimateMmrFromTier = (tier: number): number => {
@@ -41,8 +45,8 @@ export default async function RankingPage() {
           const profileRes = await fetch(`https://api.opendota.com/api/players/${id}`);
           const profileData = await profileRes.json();
           
-          // Ogólny WinRate
-          const wlRes = await fetch(`https://api.opendota.com/api/players/${id}/wl`);
+          // WinRate z ostatnich 100 meczów
+          const wlRes = await fetch(`https://api.opendota.com/api/players/${id}/wl?limit=100`);
           const wlData = await wlRes.json();
           const totalMatches = wlData.win + wlData.lose;
           const winRate = totalMatches > 0 ? ((wlData.win / totalMatches) * 100).toFixed(1) + '%' : '0%';
@@ -57,13 +61,14 @@ export default async function RankingPage() {
 
           return {
             id,
+            steam_id: String(id),
             name: profileData.profile?.personaname || `Gracz #${id}`,
             avatar: profileData.profile?.avatarfull || 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg',
             rankTier: profileData.rank_tier || 0,
             leaderboardRank: profileData.leaderboard_rank || null,
             winRate,
             mmr: finalMmr,
-            trend // <--- PRZEKAZANIE DO KOMPONENTU
+            trend,
           };
         })
       );
@@ -75,7 +80,7 @@ export default async function RankingPage() {
   }
 
   return (
-    <main className="relative min-h-screen bg-[#050505] text-slate-100 overflow-x-hidden">
+    <main className="relative bg-[#050505] text-slate-100 overflow-x-hidden">
       
       {/* BACKGROUND */}
       <div className="absolute inset-0 z-0 pointer-events-none opacity-60">
@@ -85,21 +90,23 @@ export default async function RankingPage() {
 
       <Navbar />
 
+      <SteamLinkHandler />
+
       {/* LEADERBOARD CONTAINER */}
-      <section className="relative z-10 max-w-7xl mx-auto px-6 pt-10 pb-20">
+      <section className="relative z-10 max-w-7xl mx-auto px-6 pt-[30px] pb-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-red-600/10 rounded-xl flex items-center justify-center text-red-500 border border-red-500/20"><Trophy className="w-6 h-6" /></div>
             <div>
-              <h1 className="text-4xl font-extrabold tracking-tight">Leaderboard PL</h1>
-              <p className="text-slate-400 text-sm">Najlepsi polscy gracze w naszej społeczności.</p>
+              <h1 className="text-4xl font-extrabold tracking-tight">Ranking</h1>
+              <p className="text-slate-400 text-base">Najlepsi polscy gracze w naszej społeczności.</p>
+              <p className="text-slate-500 text-sm mt-2 flex items-center gap-1.5">
+                <ShieldAlert className="w-3.5 h-3.5" /> Profil gracza musi być ustawiony jako publiczny w ustawieniach gry Dota 2.
+              </p>
             </div>
           </div>
           <div className="flex-shrink-0">
-            <a href="/api/auth/steam" className="inline-flex flex-col items-center gap-3 bg-gradient-to-r from-white/[0.03] to-white/[0.08] border border-white/10 hover:border-red-500/30 hover:from-red-950/20 hover:to-red-900/10 px-6 py-4 rounded-2xl text-base font-bold transition-all group backdrop-blur-sm shadow-xl">
-              <span className="text-slate-200 group-hover:text-white transition-colors">Dołącz do rankingu</span>
-              <img src="https://community.cloudflare.steamstatic.com/public/images/signinthroughsteam/sits_01.png" alt="Steam" className="h-6 w-auto group-hover:scale-105 transition-transform" />
-            </a>
+            <JoinSteamButton />
           </div>
         </div>
 
@@ -115,10 +122,6 @@ export default async function RankingPage() {
           <RankingControls players={players} />
         )}
 
-        <div className="mt-6 flex items-center gap-2 text-xs text-slate-500 bg-white/[0.01] p-4 rounded-xl border border-white/5">
-          <ShieldAlert className="w-4 h-4 text-slate-400 flex-shrink-0" />
-          <span>Profil gracza musi być ustawiony jako publiczny w ustawieniach gry Dota 2.</span>
-        </div>
       </section>
 
     </main>
