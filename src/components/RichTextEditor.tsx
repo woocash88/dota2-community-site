@@ -1,12 +1,53 @@
 'use client';
 
 import { useEditor, EditorContent } from '@tiptap/react';
+import { Mark, mergeAttributes } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import { TextStyle, FontFamily } from '@tiptap/extension-text-style';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Bold, Italic, List, ListOrdered, Link2, Smile, Unlink } from 'lucide-react';
+
+// ─── Font Size Extension ──────────────────────────────────────────────────────
+
+const FontSizeMark = Mark.create({
+  name: 'fontSize',
+  spanning: false,
+  inclusive: false,
+  addAttributes() {
+    return { size: { default: null } };
+  },
+  parseHTML() {
+    return [
+      {
+        style: 'font-size',
+        getAttrs: (value: string) => {
+          const parsed = parseInt(value, 10);
+          return { size: Number.isNaN(parsed) ? null : `${parsed}px` };
+        },
+      },
+    ];
+  },
+  renderHTML({ mark }) {
+    const size = mark.attrs.size;
+    return ['span', { style: `font-size: ${size}` }, 0];
+  },
+  addCommands() {
+    return {
+      setFontSize:
+        (size: string) =>
+        ({ commands }) =>
+          commands.setMark(this.name, { size }),
+      unsetFontSize:
+        () =>
+        ({ commands }) =>
+          commands.unsetMark(this.name),
+    };
+  },
+});
+
+const FONT_SIZES = ['12', '14', '16', '18', '20', '24', '28', '32', '36', '48', '64'];
 
 // ─── Emoji Picker ────────────────────────────────────────────────────────────
 
@@ -94,9 +135,27 @@ interface RichTextEditorProps {
   value: string;
   onChange: (html: string) => void;
   placeholder?: string;
+  customFonts?: { name: string; base64: string }[];
 }
 
-export default function RichTextEditor({ value, onChange, placeholder }: RichTextEditorProps) {
+const BUILT_IN_FONTS = [
+  { label: 'Logik (Domyślna)', value: 'Logik' },
+  { label: 'Logik Bold', value: 'Logik Bold' },
+  { label: 'Logik Extended', value: 'Logik Extended' },
+  { label: 'Arial', value: 'Arial' },
+  { label: 'Georgia', value: 'Georgia' },
+  { label: 'Times New Roman', value: "'Times New Roman'" },
+  { label: 'Courier New', value: "'Courier New'" },
+  { label: 'Verdana', value: 'Verdana' },
+  { label: 'Impact', value: 'Impact' },
+  { label: 'Comic Sans MS', value: "'Comic Sans MS'" },
+];
+
+export default function RichTextEditor({ value, onChange, placeholder, customFonts }: RichTextEditorProps) {
+  const fontOptions = [
+    ...BUILT_IN_FONTS,
+    ...(customFonts ?? []).map((f) => ({ label: f.name, value: f.name })),
+  ];
   const [showEmoji, setShowEmoji] = useState(false);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
@@ -109,11 +168,13 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
         blockquote: false,
         codeBlock: false,
         horizontalRule: false,
+        link: false, // we use the standalone Link extension below
       }),
       TextStyle,
       FontFamily.configure({
         types: ['textStyle'],
       }),
+      FontSizeMark,
       Link.configure({
         openOnClick: false,
         HTMLAttributes: {
@@ -237,13 +298,28 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
           className="bg-slate-800/80 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-300 font-medium outline-none focus:border-red-500/50 transition-all cursor-pointer"
         >
           <option value="">Domyślna</option>
-          <option value="Arial">Arial</option>
-          <option value="Georgia">Georgia</option>
-          <option value="'Times New Roman'">Times New Roman</option>
-          <option value="'Courier New'">Courier New</option>
-          <option value="Verdana">Verdana</option>
-          <option value="Impact">Impact</option>
-          <option value="'Comic Sans MS'">Comic Sans MS</option>
+          {fontOptions.map((f) => (
+            <option key={f.value} value={f.value}>{f.label}</option>
+          ))}
+        </select>
+
+        {/* Font Size */}
+        <select
+          value={editor.getAttributes('fontSize').size || ''}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val) {
+              editor.chain().focus().setFontSize(val).run();
+            } else {
+              editor.chain().focus().unsetFontSize().run();
+            }
+          }}
+          className="bg-slate-800/80 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-300 font-medium outline-none focus:border-red-500/50 transition-all cursor-pointer"
+        >
+          <option value="">Rozmiar</option>
+          {FONT_SIZES.map((s) => (
+            <option key={s} value={`${s}px`}>{s}px</option>
+          ))}
         </select>
 
         <div className="w-px h-5 bg-slate-700 mx-1" />

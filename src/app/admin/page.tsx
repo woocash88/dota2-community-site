@@ -11,7 +11,7 @@ import {
   Settings, Upload, Trophy, BookOpen, Check, Users, Radio, MessageSquare, Star, FileText,
 } from 'lucide-react';
 import RichTextEditor from '@/components/RichTextEditor';
-import { addStreamer, updateStreamer, deleteStreamer, updateStreamerPositions, getRankPlayers, deleteRankPlayer, getContentPage, upsertContentPage, deleteContentPage } from './actions';
+import { addStreamer, updateStreamer, deleteStreamer, updateStreamerPositions, getRankPlayers, deleteRankPlayer, getContentPage, upsertContentPage, deleteContentPage, uploadNewsImage } from './actions';
 
 
 type ActiveTab = 'news' | 'settings' | 'hof' | 'basher' | 'ranking' | 'streamers' | 'testimonials' | 'rekrutacja' | 'o-nas' | 'polityka' | null;
@@ -23,6 +23,7 @@ interface NewsItem {
   category: string;
   created_at: string;
   status: string;
+  image_url?: string | null;
 }
 
 interface HofTournamentRow {
@@ -129,6 +130,8 @@ export default function AdminPage() {
   const [category, setCategory] = useState('Turniej');
   const [content, setContent] = useState('');
   const [newsPublishing, setNewsPublishing] = useState<number | null>(null);
+  const [newsImageFile, setNewsImageFile] = useState<File | null>(null);
+  const [newsImagePreview, setNewsImagePreview] = useState<string | null>(null);
 
   // ── Settings state ──
   const [discordLink, setDiscordLink] = useState('https://discord.gg/ZxgmF7Kr4t');
@@ -337,8 +340,12 @@ export default function AdminPage() {
       .from('news')
       .select('*')
       .neq('category', 'SystemSettings')
+      .neq('category', 'ContentPage')
       .order('created_at', { ascending: false });
-    if (!error && data) setNews(data as NewsItem[]);
+    if (!error && data) {
+      // Safety filter — ensure content pages never appear in the news list
+      setNews((data as NewsItem[]).filter((n) => n.category !== 'ContentPage'));
+    }
     setLoading(false);
   };
 
@@ -551,15 +558,32 @@ export default function AdminPage() {
     e.preventDefault();
     if (!title || !stripHtml(content)) return;
 
+    let imageUrl: string | null = null;
+
+    // Upload image via server action (bypasses RLS)
+    if (newsImageFile) {
+      const formData = new FormData();
+      formData.append('file', newsImageFile);
+      const uploadResult = await uploadNewsImage(formData);
+      if (uploadResult.success) {
+        imageUrl = uploadResult.publicUrl;
+      } else {
+        console.error('Błąd przesyłania obrazka:', uploadResult.error);
+      }
+    }
+
+    const payload: Record<string, unknown> = { title, category, content };
+    if (imageUrl) payload.image_url = imageUrl;
+
     if (editingId) {
       await supabase
         .from('news')
-        .update({ title, category, content })
+        .update(payload)
         .eq('id', editingId);
     } else {
       await supabase
         .from('news')
-        .insert([{ title, category, content, status: 'draft' }]);
+        .insert([{ ...payload, status: 'draft' }]);
     }
 
     resetNewsForm();
@@ -593,6 +617,8 @@ export default function AdminPage() {
     setTitle(item.title);
     setCategory(item.category);
     setContent(item.content);
+    setNewsImageFile(null);
+    setNewsImagePreview(item.image_url ?? null);
     setActiveTab('news');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -602,6 +628,8 @@ export default function AdminPage() {
     setTitle('');
     setCategory('Turniej');
     setContent('');
+    setNewsImageFile(null);
+    setNewsImagePreview(null);
   };
 
   // ── Settings ──
@@ -2408,6 +2436,7 @@ export default function AdminPage() {
             pagesSaving={pagesSaving}
             pagesSuccess={pagesSuccess}
             pagesError={pagesError}
+            customFonts={customFonts}
           />
         )}
 
@@ -2425,6 +2454,7 @@ export default function AdminPage() {
             pagesSaving={pagesSaving}
             pagesSuccess={pagesSuccess}
             pagesError={pagesError}
+            customFonts={customFonts}
           />
         )}
 
@@ -2443,6 +2473,7 @@ export default function AdminPage() {
               pagesSaving={pagesSaving}
               pagesSuccess={pagesSuccess}
               pagesError={pagesError}
+              customFonts={customFonts}
             />
             <button
               type="button"
@@ -2522,7 +2553,45 @@ export default function AdminPage() {
                     value={content}
                     onChange={(val) => { setContent(val); setDirty(true); }}
                     placeholder="Wpisz treść wpisu…"
+                    customFonts={customFonts}
                   />
+                </div>
+
+                {/* ── Image upload ── */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    Zdjęcie do newsa (opcjonalne)
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] ?? null;
+                      setNewsImageFile(file);
+                      setNewsImagePreview(file ? URL.createObjectURL(file) : null);
+                      setDirty(true);
+                    }}
+                    className="w-full max-w-md text-sm text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-800 file:text-slate-300 hover:file:bg-slate-700 transition-all cursor-pointer"
+                  />
+                  {newsImagePreview && (
+                    <div className="mt-3 relative inline-block">
+                      <img
+                        src={newsImagePreview}
+                        alt="Podgląd"
+                        className="max-h-[200px] rounded-xl border border-white/10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewsImageFile(null);
+                          setNewsImagePreview(null);
+                        }}
+                        className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold hover:bg-red-500 transition-all"
+                      >
+                        X
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex gap-3 pt-1">
@@ -2638,7 +2707,7 @@ export default function AdminPage() {
 
 function RenderContentPageEditor({
   slug, label, content, setContent, loading, setLoading,
-  fetchContentPage, handleSave, pagesSaving, pagesSuccess, pagesError,
+  fetchContentPage, handleSave, pagesSaving, pagesSuccess, pagesError, customFonts,
 }: {
   slug: string;
   label: string;
@@ -2651,6 +2720,7 @@ function RenderContentPageEditor({
   pagesSaving: boolean;
   pagesSuccess: string | null;
   pagesError: string | null;
+  customFonts: { name: string; base64: string }[];
 }) {
   useEffect(() => {
     fetchContentPage(slug, setContent, setLoading);
@@ -2682,6 +2752,7 @@ function RenderContentPageEditor({
               value={content}
               onChange={(val) => setContent(val)}
               placeholder="Wpisz treść strony..."
+              customFonts={customFonts}
             />
             <div className="mt-4">
               <button

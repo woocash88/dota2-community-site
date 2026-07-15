@@ -10,6 +10,7 @@ interface NewsItem {
   content: string;
   category: string;
   created_at: string;
+  image_url?: string | null;
 }
 
 export default function NewsPanel() {
@@ -100,6 +101,13 @@ export default function NewsPanel() {
                     prose-strong:text-slate-100 prose-ul:text-slate-300"
                   dangerouslySetInnerHTML={{ __html: item.content }}
                 />
+                {item.image_url && (
+                  <img
+                    src={item.image_url}
+                    alt=""
+                    className="mt-4 rounded-xl max-h-[400px] w-full object-cover border border-white/5"
+                  />
+                )}
               </div>
             </article>
           ))}

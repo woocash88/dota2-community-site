@@ -187,6 +187,39 @@ export async function deleteContentPage(slug: string) {
   }
 }
 
+export async function uploadNewsImage(formData: FormData) {
+  try {
+    const file = formData.get('file') as File | null;
+    if (!file) throw new Error('No file provided');
+
+    const bucketName = 'news-images';
+    const fileExt = file.name.split('.').pop();
+    const filePath = `news/${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+
+    const arrayBuffer = await file.arrayBuffer();
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from(bucketName)
+      .upload(filePath, arrayBuffer, {
+        contentType: file.type,
+        upsert: false,
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { data: publicUrlData } = supabaseAdmin.storage
+      .from(bucketName)
+      .getPublicUrl(filePath);
+
+    return { success: true as const, publicUrl: publicUrlData.publicUrl };
+  } catch (err: unknown) {
+    console.error('Server action — uploadNewsImage:', err);
+    return {
+      success: false as const,
+      error: err instanceof Error ? err.message : JSON.stringify(err),
+    };
+  }
+}
+
 export async function updateStreamerPositions(
   updates: { id: string; position: number }[],
 ) {
