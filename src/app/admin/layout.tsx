@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
 import AdminLogoutButton from './AdminLogoutButton';
+import Link from 'next/link';
 
 const ALLOWED_ADMIN_EMAILS = ['voocash.s@gmail.com', 'wilq.wdz@gmail.com'];
 
@@ -34,14 +35,14 @@ export default async function AdminLayout({
               <br />
               Jeśli uważasz, że to błąd, skontaktuj się z administratorem.
             </p>
-            <a
+            <Link
               href="/"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl
                          bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white
                          text-sm font-medium transition-all"
             >
               ← Powrót do strony głównej
-            </a>
+            </Link>
           </div>
         </div>
       </div>

@@ -1,6 +1,8 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+const ALLOWED_ADMIN_EMAILS = ['voocash.s@gmail.com', 'wilq.wdz@gmail.com'];
+
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -31,14 +33,29 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // If accessing /admin/* and not authenticated, redirect to login
-  // (we also handle this in the layout, but this provides an extra layer)
-  if (!user && request.nextUrl.pathname.startsWith('/admin')) {
-    const url = request.nextUrl.clone();
-    // Don't redirect if already on the login page
-    if (!url.pathname.startsWith('/admin-login')) {
-      url.pathname = '/admin-login';
-      return NextResponse.redirect(url);
+  const isAdminPath = request.nextUrl.pathname.startsWith('/admin');
+  const isApiAdminPath = request.nextUrl.pathname.startsWith('/api/admin');
+
+  if (isAdminPath || isApiAdminPath) {
+    if (!user) {
+      if (isApiAdminPath) {
+        return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 });
+      }
+      const url = request.nextUrl.clone();
+      if (!url.pathname.startsWith('/admin-login')) {
+        url.pathname = '/admin-login';
+        return NextResponse.redirect(url);
+      }
+    } else {
+      const isAuthorized = ALLOWED_ADMIN_EMAILS.includes(user.email ?? '');
+      if (!isAuthorized) {
+        if (isApiAdminPath) {
+          return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+        }
+        // Redirect non-authorized authenticated users to root or showing layout's access denied (layout already handles this, but redirecting from here is even safer)
+        // If we let them through to /admin/..., AdminLayout will render the Access Denied block, which is a good UX.
+        // But for /api/admin, we must return a 403 response.
+      }
     }
   }
 

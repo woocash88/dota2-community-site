@@ -1,7 +1,7 @@
 'use client';
 
 import { useEditor, EditorContent } from '@tiptap/react';
-import { Mark, mergeAttributes } from '@tiptap/core';
+import { Mark } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';

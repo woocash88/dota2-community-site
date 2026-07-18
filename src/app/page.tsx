@@ -31,10 +31,6 @@ export default function Home() {
   }, []);
   const [discordCount, setDiscordCount] = useState(2400);
   const [partnerLink, setPartnerLink] = useState('https://dreammachines.pl/pl/?utm_content=dota2');
-  const [twitchLink, setTwitchLink] = useState('');
-  const [youtubeLink, setYoutubeLink] = useState('');
-  const [instagramLink, setInstagramLink] = useState('');
-  const [discordLink, setDiscordLink] = useState('https://discord.gg/ZxgmF7Kr4t');
 
   useEffect(() => {
     async function fetchAll() {
@@ -60,10 +56,6 @@ export default function Home() {
         if (!error && data && data.content) {
           const val = JSON.parse(data.content);
           if (val.partner_link) setPartnerLink(val.partner_link);
-          if (val.twitch_link) setTwitchLink(val.twitch_link);
-          if (val.youtube_link) setYoutubeLink(val.youtube_link);
-          if (val.instagram_link) setInstagramLink(val.instagram_link);
-          if (val.discord_link) setDiscordLink(val.discord_link);
         }
       } catch {
         // fallback

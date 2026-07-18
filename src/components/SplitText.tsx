@@ -26,7 +26,6 @@ export default function SplitText({
   delay = 40,
   duration = 0.6,
   ease = 'power4.out',
-  splitType = 'chars',
   from = { opacity: 0, y: 30, scale: 0.9 },
   to = { opacity: 1, y: 0, scale: 1 },
   threshold = 0.1,
