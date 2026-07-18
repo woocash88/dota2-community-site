@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { createBrowserSupabaseClient } from '@/lib/supabase-browser';
 import ClientLightPillar from '@/components/ClientLightPillar';
 import Navbar from '@/components/Navbar';
 import {
@@ -172,7 +172,6 @@ export default function AdminPage() {
   const [basherPreviews, setBasherPreviews] = useState<string[]>([]);
   const [basherIssues, setBasherIssues] = useState<BasherIssue[]>([]);
   const [basherLoading, setBasherLoading] = useState(false);
-  const [basherUploading, setBasherUploading] = useState(false);
   const [basherSaving, setBasherSaving] = useState(false);
   const [basherSuccess, setBasherSuccess] = useState<string | false>(false);
   const [basherError, setBasherError] = useState<string | null>(null);
@@ -201,7 +200,7 @@ export default function AdminPage() {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   // ── Testimonials state ──
-  const [testimonials, setTestimonials] = useState<any[]>([]);
+  const [testimonials, setTestimonials] = useState<Record<string, any>[]>([]);
   const [testimonialNick, setTestimonialNick] = useState('');
   const [testimonialAvatarUrl, setTestimonialAvatarUrl] = useState('');
   const [testimonialHeadline, setTestimonialHeadline] = useState('');
@@ -241,6 +240,7 @@ export default function AdminPage() {
   };
 
   const fetchTestimonials = async () => {
+    const supabase = createBrowserSupabaseClient();
     const { data, error } = await supabase
       .from('testimonials')
       .select('*')
@@ -270,8 +270,9 @@ export default function AdminPage() {
       if (!result.success) throw new Error(result.error);
       setPagesSuccess(`Strona "${slug}" została zaktualizowana.`);
       setTimeout(() => setPagesSuccess(null), 3000);
-    } catch (err: any) {
-      setPagesError(err.message || 'Wystąpił błąd podczas zapisu strony.');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Wystąpił błąd podczas zapisu strony.';
+      setPagesError(errorMsg);
       setTimeout(() => setPagesError(null), 3000);
     }
     setPagesSaving(false);
@@ -284,6 +285,7 @@ export default function AdminPage() {
     setTestimonialError(null);
 
     try {
+      const supabase = createBrowserSupabaseClient();
       if (testimonialEditingId) {
         const { error } = await supabase
           .from('testimonials')
@@ -313,8 +315,9 @@ export default function AdminPage() {
       resetTestimonialForm();
       setDirty(false);
       await fetchTestimonials();
-    } catch (err: any) {
-      setTestimonialError(err.message || 'Wystąpił błąd.');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Wystąpił błąd.';
+      setTestimonialError(errorMsg);
     } finally {
       setTestimonialSaving(false);
     }
@@ -323,6 +326,7 @@ export default function AdminPage() {
   const handleDeleteTestimonial = async (id: string) => {
     if (!window.confirm('Na pewno usunąć tę opinię?')) return;
     setTestimonialDeleting(id);
+    const supabase = createBrowserSupabaseClient();
     const { error } = await supabase.from('testimonials').delete().eq('id', id);
     if (error) {
       setTestimonialError(error.message);
@@ -336,6 +340,7 @@ export default function AdminPage() {
 
   const fetchNews = async () => {
     setLoading(true);
+    const supabase = createBrowserSupabaseClient();
     const { data, error } = await supabase
       .from('news')
       .select('*')
@@ -351,6 +356,7 @@ export default function AdminPage() {
 
   const fetchSettings = async () => {
     try {
+      const supabase = createBrowserSupabaseClient();
       const { data, error } = await supabase
         .from('news')
         .select('*')
@@ -374,6 +380,7 @@ export default function AdminPage() {
 
   const fetchHofTournaments = async () => {
     setHofLoading(true);
+    const supabase = createBrowserSupabaseClient();
     const { data, error } = await supabase
       .from('hall_of_fame_tournaments')
       .select('*')
@@ -384,6 +391,7 @@ export default function AdminPage() {
 
   const fetchBasherIssues = async () => {
     setBasherLoading(true);
+    const supabase = createBrowserSupabaseClient();
     const { data, error } = await supabase
       .from('basher_issues')
       .select('*')
@@ -413,9 +421,10 @@ export default function AdminPage() {
       setRankSuccess('Gracz został usunięty z rankingu.');
       router.refresh();
       setTimeout(() => setRankSuccess(null), 3000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Błąd usuwania gracza:', err);
-      setRankError(err.message || 'Wystąpił błąd podczas usuwania gracza.');
+      const errorMsg = err instanceof Error ? err.message : 'Wystąpił błąd podczas usuwania gracza.';
+      setRankError(errorMsg);
       setTimeout(() => setRankError(null), 3000);
     }
     setRankDeleting(null);
@@ -424,6 +433,7 @@ export default function AdminPage() {
   // ── Streamers CRUD ──
 
   const fetchStreamers = async () => {
+    const supabase = createBrowserSupabaseClient();
     const { data, error } = await supabase
       .from('streamers')
       .select('*')
@@ -575,6 +585,7 @@ export default function AdminPage() {
     const payload: Record<string, unknown> = { title, category, content };
     if (imageUrl) payload.image_url = imageUrl;
 
+    const supabase = createBrowserSupabaseClient();
     if (editingId) {
       await supabase
         .from('news')
@@ -593,6 +604,7 @@ export default function AdminPage() {
 
   const handleDeleteNews = async (id: number) => {
     if (!window.confirm('Na pewno chcesz usunąć ten wpis?')) return;
+    const supabase = createBrowserSupabaseClient();
     await supabase.from('news').delete().eq('id', id);
     fetchNews();
   };
@@ -600,12 +612,13 @@ export default function AdminPage() {
   const handlePublishNews = async (id: number) => {
     setNewsPublishing(id);
     try {
+      const supabase = createBrowserSupabaseClient();
       const { error } = await supabase
         .from('news')
         .update({ status: 'published' })
         .eq('id', id);
       if (error) throw error;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Błąd publikacji newsa:', err);
     }
     setNewsPublishing(null);
@@ -650,6 +663,7 @@ export default function AdminPage() {
         custom_fonts: customFonts,
       };
 
+      const supabase = createBrowserSupabaseClient();
       const { data: existing, error: checkError } = await supabase
         .from('news')
         .select('id')
@@ -679,9 +693,9 @@ export default function AdminPage() {
       setSaveSettingsSuccess(true);
       setDirty(false);
       setTimeout(() => setSaveSettingsSuccess(false), 3000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Błąd zapisu ustawień:', err);
-      setSaveSettingsError(err.message || 'Wystąpił błąd podczas zapisywania do bazy danych.');
+      setSaveSettingsError(err instanceof Error ? err.message : String(err) || 'Wystąpił błąd podczas zapisywania do bazy danych.');
     }
   };
 
@@ -811,9 +825,9 @@ export default function AdminPage() {
       setTimeout(() => setHofSuccess(false), 3000);
       resetHofForm();
       fetchHofTournaments();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Błąd zapisu turnieju:', err);
-      setHofError(err.message || 'Wystąpił błąd podczas zapisywania.');
+      setHofError(err instanceof Error ? err.message : String(err) || 'Wystąpił błąd podczas zapisywania.');
     } finally {
       setHofSaving(false);
       setIsUploading(false);
@@ -865,7 +879,7 @@ export default function AdminPage() {
         const json = await res.json();
         throw new Error(json.error);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Błąd publikacji turnieju:', err);
     }
     setHofPublishing(null);
@@ -885,7 +899,6 @@ export default function AdminPage() {
     setBasherSuccess(false);
     setBasherError(null);
     setBasherSaving(false);
-    setBasherUploading(false);
   };
 
   const handleBasherSubmit = async (e: React.FormEvent) => {
@@ -903,6 +916,7 @@ export default function AdminPage() {
       }
 
       // Duplicate issue number check (skip when editing the same record)
+      const supabase = createBrowserSupabaseClient();
       if (!basherEditingId) {
         const { data: existingIssue } = await supabase
           .from('basher_issues')
@@ -920,9 +934,6 @@ export default function AdminPage() {
       let pagesArray: string[];
 
       if (basherFiles.length > 0) {
-        // Upload plików do Supabase Storage
-        setBasherUploading(true);
-
         // Sortuj pliki alfabetycznie po nazwie
         const sortedFiles = [...basherFiles].sort((a, b) =>
           a.name.localeCompare(b.name),
@@ -950,7 +961,6 @@ export default function AdminPage() {
         }
 
         pagesArray = urls;
-        setBasherUploading(false);
       } else {
         // Bez nowych plików — używamy istniejących URL-i (tryb edycji)
         pagesArray = basherPreviews.filter(Boolean);
@@ -990,12 +1000,11 @@ export default function AdminPage() {
       setTimeout(() => setBasherSuccess(false), 3000);
       resetBasherForm();
       fetchBasherIssues();
-    } catch (err: any) {
-      console.error('Błąd zapisu magazynu:', err);
-      setBasherError(err.message || 'Wystąpił błąd podczas zapisywania.');
+    } catch (err: unknown) {
+      console.error('Błąd zapisania magazynu:', err);
+      setBasherError(err instanceof Error ? err.message : String(err) || 'Wystąpił błąd podczas zapisywania.');
     } finally {
       setBasherSaving(false);
-      setBasherUploading(false);
     }
   };
 
@@ -1003,9 +1012,10 @@ export default function AdminPage() {
     if (!window.confirm('Na pewno chcesz usunąć to wydanie?')) return;
     setBasherIssues((prev) => prev.filter((i) => i.id !== id));
     try {
+      const supabase = createBrowserSupabaseClient();
       const { error } = await supabase.from('basher_issues').delete().eq('id', id);
       if (error) throw error;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Błąd usuwania magazynu:', err);
       fetchBasherIssues();
     }
@@ -1018,12 +1028,13 @@ export default function AdminPage() {
     );
     setBasherPublishing(id);
     try {
+      const supabase = createBrowserSupabaseClient();
       const { error } = await supabase
         .from('basher_issues')
         .update({ status: 'published' })
         .eq('id', id);
       if (error) throw error;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Błąd publikacji magazynu:', err);
       fetchBasherIssues();
     }

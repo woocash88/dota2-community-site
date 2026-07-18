@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { FaTwitch, FaYoutube, FaInstagram, FaDiscord } from 'react-icons/fa';
-import { supabase } from '@/lib/supabase';
+import { createBrowserSupabaseClient } from '@/lib/supabase-browser';
 import Link from 'next/link';
 
 function Footer() {
@@ -13,6 +13,7 @@ function Footer() {
   useEffect(() => {
     async function fetchLinks() {
       try {
+        const supabase = createBrowserSupabaseClient();
         const { data, error } = await supabase
           .from('news')
           .select('*')

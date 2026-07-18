@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { createBrowserSupabaseClient } from '@/lib/supabase-browser';
 import { Calendar } from 'lucide-react';
 
 interface NewsItem {
@@ -20,6 +20,7 @@ export default function NewsPanel() {
   useEffect(() => {
     async function fetchNews() {
       try {
+        const supabase = createBrowserSupabaseClient();
         const { data, error } = await supabase
           .from('news')
           .select('*')

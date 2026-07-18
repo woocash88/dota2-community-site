@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { createBrowserSupabaseClient } from '@/lib/supabase-browser';
+import Link from 'next/link';
 
 export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
@@ -73,9 +74,9 @@ export default function AdminLoginPage() {
 
         {/* Back link */}
         <div className="text-center mt-8">
-          <a href="/" className="text-zinc-600 hover:text-zinc-400 text-xs transition-colors">
+          <Link href="/" className="text-zinc-600 hover:text-zinc-400 text-xs transition-colors">
             ← Powrót do strony głównej
-          </a>
+          </Link>
         </div>
       </div>
     </div>

@@ -3,10 +3,8 @@
 import { useEffect, useState } from 'react';
 import { Users, Mail } from 'lucide-react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
 
 export default function Navbar() {
-  const [discordLink, setDiscordLink] = useState('https://discord.gg/ZxgmF7Kr4t');
   const [pdlLinked, setPdlLinked] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -14,28 +12,6 @@ export default function Navbar() {
       .then((r) => r.json())
       .then((data) => setPdlLinked(data.linked === true))
       .catch(() => setPdlLinked(false));
-  }, []);
-
-  useEffect(() => {
-    async function fetchDiscordLink() {
-      try {
-        const { data, error } = await supabase
-          .from('news')
-          .select('*')
-          .eq('category', 'SystemSettings')
-          .eq('title', 'global_settings')
-          .maybeSingle();
-        if (!error && data && data.content) {
-          const val = JSON.parse(data.content);
-          if (val.discord_link) {
-            setDiscordLink(val.discord_link);
-          }
-        }
-      } catch {
-        // Ignorujemy błędy i zostajemy przy domyślnym linku
-      }
-    }
-    fetchDiscordLink();
   }, []);
 
   const navLinks = [
