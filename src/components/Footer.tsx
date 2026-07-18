@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { FaTwitch, FaYoutube, FaInstagram, FaDiscord } from 'react-icons/fa';
 import { supabase } from '@/lib/supabase';
+import Link from 'next/link';
 
 function Footer() {
   const [twitchLink, setTwitchLink] = useState('');
@@ -51,14 +52,23 @@ function Footer() {
           <ul className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-base font-medium">
             {navLinks.map((link) => (
               <li key={link.name}>
-                <a
-                  href={link.href}
-                  target={link.external ? "_blank" : undefined}
-                  rel={link.external ? "noopener noreferrer" : undefined}
-                  className="text-slate-400 hover:text-white transition-all duration-300 relative after:absolute after:left-0 after:bottom-0 after:h-0.5 after:w-0 after:bg-red-600 after:transition-all after:duration-300 hover:after:w-full"
-                >
-                  {link.name}
-                </a>
+                {link.external ? (
+                  <a
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-slate-400 hover:text-white transition-all duration-300 relative after:absolute after:left-0 after:bottom-0 after:h-0.5 after:w-0 after:bg-red-600 after:transition-all after:duration-300 hover:after:w-full"
+                  >
+                    {link.name}
+                  </a>
+                ) : (
+                  <Link
+                    href={link.href}
+                    className="text-slate-400 hover:text-white transition-all duration-300 relative after:absolute after:left-0 after:bottom-0 after:h-0.5 after:w-0 after:bg-red-600 after:transition-all after:duration-300 hover:after:w-full"
+                  >
+                    {link.name}
+                  </Link>
+                )}
               </li>
             ))}
           </ul>
@@ -91,12 +101,12 @@ function Footer() {
         </div>
         <p className="text-center text-xs text-slate-500 mt-4">
           &copy; {new Date().getFullYear()} Polish Dota 2 Inhouse. Wszelkie prawa zastrzeżone.{' '}
-          <a
+          <Link
             href="/polityka-prywatnosci"
             className="text-slate-400 hover:text-white transition-all duration-300 relative after:absolute after:left-0 after:bottom-0 after:h-0.5 after:w-0 after:bg-red-600 after:transition-all after:duration-300 hover:after:w-full"
           >
             Polityka prywatności
-          </a>
+          </Link>
         </p>
       </div>
     </footer>

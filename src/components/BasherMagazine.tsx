@@ -105,6 +105,7 @@ function IssueCard({
 
 export default function BasherMagazine({ issues, newestIssue }: Props) {
   const [selectedIssue, setSelectedIssue] = useState<BasherIssue | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const flipRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -154,7 +155,10 @@ export default function BasherMagazine({ issues, newestIssue }: Props) {
   }, []);
 
   useEffect(() => {
-    resetView();
+    const handle = requestAnimationFrame(() => {
+      resetView();
+    });
+    return () => cancelAnimationFrame(handle);
   }, [selectedIssue?.id, resetView]);
 
   // Close on Escape

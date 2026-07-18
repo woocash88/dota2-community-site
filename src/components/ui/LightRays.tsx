@@ -81,6 +81,7 @@ const LightRays = ({
   className = '',
 }: LightRaysProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const uniformsRef = useRef<any>(null);
   const rendererRef = useRef<Renderer | null>(null);
   const mouseRef = useRef({ x: 0.5, y: 0.5 });
