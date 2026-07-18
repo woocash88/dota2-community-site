@@ -13,7 +13,6 @@ export async function GET(request: Request) {
   }
 
   // --- OpenID 2.0 verification ---
-  // Forward all openid.* params back to Steam with mode=check_authentication
   const verifyParams = new URLSearchParams();
   for (const [key, value] of url.searchParams) {
     if (key.startsWith('openid.')) {
@@ -34,31 +33,57 @@ export async function GET(request: Request) {
   }
 
   const verifyText = await verifyResponse.text();
-
-  // Steam responds with newline-separated key:value pairs; check for is_valid:true
   const isValid = verifyText.split('\n').some(
     (line) => line.trim().toLowerCase() === 'is_valid:true'
   );
 
   if (!isValid) {
-    return NextResponse.json({ error: 'Weryfikacja OpenID nie powiodła się – odpowiedź Steam nie jest ważna.' }, { status: 403 });
+    return NextResponse.json({ error: 'Weryfikacja OpenID nie powiodła się.' }, { status: 403 });
   }
 
   // --- Extract Steam ID ---
   const steamId64 = claimedId.replace('https://steamcommunity.com/openid/id/', '');
   const steamId32 = (BigInt(steamId64) - BigInt('76561197960265728')).toString();
 
-  // --- Upsert into players table (service role – bypasses RLS) ---
+  // --- Fetch OpenDota Data ---
+  let openDotaName = `Gracz #${steamId32}`;
+  let openDotaAvatar = 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg';
+  let openDotaRank: number | null = null;
+
+  try {
+    const openDotaRes = await fetch(`https://api.opendota.com/api/players/${steamId32}`);
+    if (openDotaRes.ok) {
+      const openDotaData = await openDotaRes.json();
+      openDotaName = openDotaData.profile?.personaname || openDotaName;
+      openDotaAvatar = openDotaData.profile?.avatarfull || openDotaAvatar;
+      openDotaRank = openDotaData.leaderboard_rank || null;
+    }
+  } catch (e) {
+    console.warn('OpenDota fetch failed:', e);
+  }
+
+  // --- Upsert Logic ---
+  // Próbujemy znaleźć pasujące miejsce w rankingu lub stworzyć nowy rekord
   const { error: upsertError } = await supabaseAdmin
-    .from('players')
-    .upsert({ steam_id: steamId32 }, { onConflict: 'steam_id', ignoreDuplicates: true });
+    .from('ranking_leaderboard')
+    .upsert(
+      {
+        name: openDotaName,
+        steam_id: steamId32,
+        avatar: openDotaAvatar,
+        leaderboard_rank: openDotaRank,
+        is_registered: true,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'steam_id' }
+    );
 
   if (upsertError) {
-    console.error('Błąd upsertu do Supabase:', upsertError.message);
+    console.error('Błąd upsertu do ranking_leaderboard:', upsertError.message);
     return NextResponse.json({ error: 'Nie udało się zapisać gracza w bazie danych.' }, { status: 500 });
   }
 
-  // --- Set signed session cookie ---
+  // --- Set session & redirect ---
   const sessionToken = sign(steamId32);
   const host = request.headers.get('host');
   const protocol = host?.includes('localhost') ? 'http' : 'https';
@@ -68,8 +93,6 @@ export async function GET(request: Request) {
     httpOnly: true,
     sameSite: 'lax',
     path: '/',
-    // No maxAge/expires = session cookie (cleared when browser closes)
-    // Set a long maxAge for persistent sessions (e.g. 1 year)
     maxAge: 60 * 60 * 24 * 365,
   });
 

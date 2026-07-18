@@ -14,6 +14,7 @@ interface PlayerData {
   winRate: string;
   mmr: number;
   trend: number;
+  isOfficial: boolean;
 }
 
 interface RankingControlsProps {
@@ -21,8 +22,9 @@ interface RankingControlsProps {
 }
 
 const getRankName = (tier: number, leaderRank: number | null) => {
-  if (leaderRank) return `Immortal #${leaderRank}`;
+  if (leaderRank && leaderRank > 0) return `Rank #${leaderRank}`;
   if (tier === 0) return 'Nieznana';
+  if (tier >= 80) return 'Immortal';
   const badges = ['Herald', 'Guardian', 'Crusader', 'Archon', 'Legend', 'Ancient', 'Divine', 'Immortal'];
   return `${badges[Math.floor(tier / 10) - 1] || 'Ranga'} ${tier % 10}`;
 };
@@ -35,7 +37,6 @@ function InfoTooltip({ text }: { text: string }) {
   const iconRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
 
-  // Potrzebne żeby createPortal działał tylko po stronie klienta
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -99,16 +100,16 @@ function InfoTooltip({ text }: { text: string }) {
 
 function RankCell({ position }: { position: number }) {
   if (position === 1) {
-    return <span className="text-3xl drop-shadow-[0_0_8px_rgba(255,215,0,0.6)]">🥇</span>;
+    return <span className="text-2xl drop-shadow-[0_0_8px_rgba(255,215,0,0.8)]">🥇</span>;
   }
   if (position === 2) {
-    return <span className="text-3xl drop-shadow-[0_0_8px_rgba(192,192,192,0.6)]">🥈</span>;
+    return <span className="text-2xl drop-shadow-[0_0_8px_rgba(192,192,192,0.8)]">🥈</span>;
   }
   if (position === 3) {
-    return <span className="text-3xl drop-shadow-[0_0_8px_rgba(205,127,50,0.6)]">🥉</span>;
+    return <span className="text-2xl drop-shadow-[0_0_8px_rgba(205,127,50,0.8)]">🥉</span>;
   }
   return (
-    <span className="font-black text-3xl text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">
+    <span className="font-black text-base text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">
       #{position}
     </span>
   );
@@ -203,21 +204,17 @@ export default function RankingControls({ players }: RankingControlsProps) {
       </div>
 
       <div className="bg-slate-900/20 border border-white/5 rounded-3xl backdrop-blur-md shadow-2xl overflow-x-auto">
-        <table className="w-full text-left border-collapse table-fixed">
+        <table className="w-full text-left border-collapse table-fixed text-base">
           <thead>
             <tr className="border-b border-white/5 text-slate-400 text-base font-bold uppercase tracking-wider bg-white/5">
-              <th className="py-5 px-6 text-center w-20">Miejsce</th>
-              <th className="py-5 px-6 text-center w-[25%]">Gracz</th>
-              <th className="py-5 px-6 text-center w-[25%]">Ranga</th>
-              <th className="py-5 px-6 text-center w-[15%] whitespace-nowrap">
-                MMR
-                <InfoTooltip text="Ranking MMR estymowany na podstawie danych OpenDota." />
-              </th>
-              <th className="py-5 px-6 w-[15%] text-center whitespace-nowrap">
+              <th className="py-2 px-4 text-right w-[10%]">Pozycja</th>
+              <th className="py-2 pl-8 pr-4 text-left w-[30%]">Gracz</th>
+              <th className="py-2 pl-8 pr-4 text-left w-[25%]">Ranga</th>
+              <th className="py-2 px-4 w-[15%] text-center whitespace-nowrap">
                 Winrate
                 <InfoTooltip text="Ostatnie 100 Meczów" />
               </th>
-              <th className="py-5 px-6 w-[15%] text-center whitespace-nowrap">
+              <th className="py-2 px-4 w-[20%] text-center whitespace-nowrap">
                 Forma
                 <InfoTooltip text="Ostatnie 7 dni" />
               </th>
@@ -230,75 +227,86 @@ export default function RankingControls({ players }: RankingControlsProps) {
                   key={player.id}
                   className="border-b border-white/5 hover:bg-white/[0.03] transition-colors"
                 >
-                  <td className="py-5 px-6 text-center">
+                  <td className="py-2 px-4 text-center">
                     <RankCell position={index + 1} />
                   </td>
-                  <td className="py-5 px-6 text-center">
-                    <div className="flex items-center justify-center gap-4">
+                  
+                  <td className="py-1.5 pl-8 pr-4 text-left">
+                    <div className="flex items-center justify-start gap-3">
                       <img
                         src={player.avatar}
                         alt=""
-                        className="w-14 h-14 rounded-xl border border-white/10 object-cover"
+                        className="w-8 h-8 rounded-lg border border-white/10 object-cover"
                       />
-                      <a
-                        href={`https://www.dotabuff.com/players/${player.steam_id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group flex items-center gap-2 min-w-0"
-                      >
-                        <span className="font-bold text-2xl text-slate-200 group-hover:text-red-400 transition-colors truncate block max-w-[120px] md:max-w-[180px]">
-                          {player.name}
-                        </span>
-                        <ExternalLink className="w-4 h-4 text-slate-500 group-hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0" />
-                      </a>
+                      <div className="text-left min-w-0">
+                        {player.isOfficial ? (
+                          <span className="font-bold text-l text-slate-200 truncate block max-w-[120px] md:max-w-[180px]">
+                            {player.name}
+                          </span>
+                        ) : (
+                          <a
+                            href={`https://www.dotabuff.com/players/${player.steam_id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group flex items-center gap-2 min-w-0"
+                          >
+                            <span className="font-bold text-base text-slate-200 group-hover:text-red-400 transition-colors truncate block max-w-[120px] md:max-w-[180px]">
+                              {player.name}
+                            </span>
+                            <ExternalLink className="w-4 h-4 text-slate-500 group-hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0" />
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </td>
 
-                  <td className="py-5 px-6 text-center">
-                    <div className="flex items-center justify-center gap-3">
+                  <td className="py-1.5 pl-8 pr-4 text-left">
+                    <div className="flex items-center justify-start gap-3">
                       <img
-                        src={`/ranks/${(() => {
+                        src={player.isOfficial ? '/ranks/immortal2.png' : `/ranks/${(() => {
                           if (player.rankTier === 0) return 'unranked';
                           const badges = ['herald','guardian','crusader','archon','legend','ancient','divine','immortal'];
                           const idx = Math.floor(player.rankTier / 10) - 1;
                           return badges[idx] || 'unranked';
                         })()}.png`}
                         alt=""
-                        className="w-10 h-10 object-contain"
+                        className="w-8 h-8 object-contain"
                       />
-                      <span className="text-slate-300 font-medium text-xl">
+                      <span className="text-slate-300 font-medium text-base text-left">
                         {getRankName(player.rankTier, player.leaderboardRank)}
                       </span>
                     </div>
                   </td>
 
-                  <td className="py-5 px-6 text-center font-mono font-bold text-2xl text-slate-200">
-                    {player.mmr > 0 ? player.mmr : '—'}
+                  <td className="py-1.5 px-4 text-center font-mono font-bold text-lg text-emerald-400">
+                    {player.isOfficial ? (
+                      <span className="text-slate-500 text-lg">—</span>
+                    ) : (
+                      player.winRate
+                    )}
                   </td>
 
-                  <td className="py-5 px-6 text-center font-mono font-bold text-2xl text-emerald-400">
-                    {player.winRate}
-                  </td>
-
-                  <td className="py-5 px-6 text-center font-mono">
-                    {player.trend >= 5 ? (
-                      <div className="flex items-center justify-center gap-1.5 text-orange-400 drop-shadow-[0_0_12px_rgba(251,146,60,0.8)] font-black text-2xl" title="ON FIRE! Niesamowity winstreak!">
-                        <Flame className="w-6 h-6 fill-orange-500 animate-pulse" />
+                  <td className="py-1.5 px-4 text-center font-mono">
+                    {player.isOfficial ? (
+                      <span className="text-slate-500 text-lg">—</span>
+                    ) : player.trend >= 5 ? (
+                      <div className="flex items-center justify-center gap-1.5 text-orange-400 drop-shadow-[0_0_12px_rgba(251,146,60,0.8)] font-black text-sm" title="ON FIRE! Niesamowity winstreak!">
+                        <Flame className="w-4 h-4 fill-orange-500 animate-pulse" />
                         <span>+{player.trend}</span>
                       </div>
                     ) : player.trend > 0 ? (
-                      <div className="flex items-center justify-center gap-1 text-emerald-400 font-bold text-xl" title="Więcej wygranych niż przegranych">
-                        <TrendingUp className="w-5 h-5" />
+                      <div className="flex items-center justify-center gap-1 text-emerald-400 font-bold text-lg" title="Więcej wygranych niż przegranych">
+                        <TrendingUp className="w-4 h-4" />
                         <span>+{player.trend}</span>
                       </div>
                     ) : player.trend < 0 ? (
-                      <div className="flex items-center justify-center gap-1 text-red-500 font-bold text-xl" title="Więcej przegranych niż wygranych">
-                        <TrendingDown className="w-5 h-5" />
+                      <div className="flex items-center justify-center gap-1 text-red-500 font-bold text-lg" title="Więcej przegranych niż wygranych">
+                        <TrendingDown className="w-4 h-4" />
                         <span>{player.trend}</span>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-center gap-1 text-slate-500 font-bold text-xl" title="Brak zmian / Równy bilans">
-                        <Minus className="w-5 h-5" />
+                      <div className="flex items-center justify-center gap-1 text-slate-500 font-bold text-lg" title="Brak zmian / Równy bilans">
+                        <Minus className="w-4 h-4" />
                       </div>
                     )}
                   </td>
@@ -306,7 +314,7 @@ export default function RankingControls({ players }: RankingControlsProps) {
               ))
             ) : (
               <tr>
-                <td colSpan={6} className="py-10 text-center text-slate-400 font-medium">
+                <td colSpan={5} className="py-10 text-center text-slate-400 font-medium">
                   Brak graczy spełniających kryteria wyszukiwania.
                 </td>
               </tr>

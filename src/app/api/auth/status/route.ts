@@ -10,7 +10,7 @@ export async function GET() {
   }
 
   const { data } = await supabaseAdmin
-    .from('players')
+    .from('ranking_leaderboard')
     .select('steam_id')
     .eq('steam_id', steamId)
     .maybeSingle();

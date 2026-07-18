@@ -6,14 +6,17 @@ import { supabase } from '@/lib/supabase';
 export async function getRankPlayers() {
   try {
     const { data, error } = await supabaseAdmin
-      .from('players')
-      .select('steam_id, created_at')
+      .from('ranking_leaderboard')
+      .select('id, steam_id, name, created_at')
+      .is('is_official_leaderboard', false)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
 
     const normalized = (data ?? []).map((row) => ({
+      id: row.id as string,
       steam_id: row.steam_id as string,
+      name: row.name as string,
       created_at: row.created_at as string,
     }));
 
@@ -30,7 +33,7 @@ export async function getRankPlayers() {
 export async function deleteRankPlayer(steamId: string) {
   try {
     const { error } = await supabaseAdmin
-      .from('players')
+      .from('ranking_leaderboard')
       .delete()
       .eq('steam_id', steamId);
 

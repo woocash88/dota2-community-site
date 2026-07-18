@@ -81,22 +81,20 @@ function IssueCard({
           {' '}
           <span className="text-slate-200">{issue.title}</span>
         </div>
-        <div className={`${metaSize} text-slate-400 mt-0.5`}>
+        <div className={`${metaSize} text-slate-400 mt-0.5 flex items-center gap-2`}>
           ({formatDate(issue.publish_date)})
+          {issue.link_url && (
+            <a
+              href={issue.link_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-red-500 hover:text-red-400 font-bold underline underline-offset-2"
+            >
+              [LINK]
+            </a>
+          )}
         </div>
       </div>
-      {issue.link_url && (
-        <div className="mt-0.5 text-left">
-          <a
-            href={issue.link_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-red-500 hover:text-red-400 font-bold text-sm underline underline-offset-2"
-          >
-            [LINK]
-          </a>
-        </div>
-      )}
     </motion.button>
   );
 }

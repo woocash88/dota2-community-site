@@ -1,4 +1,4 @@
-import { Users, Trophy, ShieldAlert } from 'lucide-react';
+import { Users, Trophy, ShieldAlert, Info } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import ClientLightPillar from '@/components/ClientLightPillar';
 import RankingControls from '@/components/RankingControls';
@@ -19,6 +19,7 @@ interface PlayerData {
   winRate: string;
   mmr: number;
   trend: number;
+  isOfficial: boolean;
 }
 
 const estimateMmrFromTier = (tier: number): number => {
@@ -35,45 +36,74 @@ export default async function RankingPage() {
   let players: PlayerData[] = [];
 
   try {
-    const { data: dbPlayers, error } = await supabase.from('players').select('steam_id');
-    
-    if (!error && dbPlayers && dbPlayers.length > 0) {
-      const activeIds = dbPlayers.map(p => parseInt(p.steam_id, 10));
+    const { data: leaderboardEntries, error } = await supabase
+      .from('ranking_leaderboard')
+      .select('*');
 
-      const data = await Promise.all(
-        activeIds.map(async (id) => {
-          const profileRes = await fetch(`https://api.opendota.com/api/players/${id}`);
-          const profileData = await profileRes.json();
-          
-          // WinRate z ostatnich 100 meczów
-          const wlRes = await fetch(`https://api.opendota.com/api/players/${id}/wl?limit=100`);
-          const wlData = await wlRes.json();
-          const totalMatches = wlData.win + wlData.lose;
-          const winRate = totalMatches > 0 ? ((wlData.win / totalMatches) * 100).toFixed(1) + '%' : '0%';
-          
-          // Forma z ostatnich 7 dni (Win - Lose)
-          const wl7DaysRes = await fetch(`https://api.opendota.com/api/players/${id}/wl?date=7`);
-          const wl7DaysData = await wl7DaysRes.json();
-          const trend = (wl7DaysData.win || 0) - (wl7DaysData.lose || 0);
+    if (!error && leaderboardEntries && leaderboardEntries.length > 0) {
+      let officialIndex = 0;
 
-          const openDotaEstimatedMmr = profileData.mmr_estimate?.estimate;
-          const finalMmr = openDotaEstimatedMmr || estimateMmrFromTier(profileData.rank_tier || 0);
+      const results = await Promise.all(
+        leaderboardEntries.map(async (entry) => {
+          if (entry.steam_id) {
+            // Registered player — fetch live stats from OpenDota
+            const id = parseInt(entry.steam_id, 10);
 
+            const profileRes = await fetch(`https://api.opendota.com/api/players/${id}`);
+            const profileData = await profileRes.json();
+
+            const wlRes = await fetch(`https://api.opendota.com/api/players/${id}/wl?limit=100`);
+            const wlData = await wlRes.json();
+            const totalMatches = wlData.win + wlData.lose;
+            const winRate = totalMatches > 0 ? ((wlData.win / totalMatches) * 100).toFixed(1) + '%' : '0%';
+
+            const wl7DaysRes = await fetch(`https://api.opendota.com/api/players/${id}/wl?date=7`);
+            const wl7DaysData = await wl7DaysRes.json();
+            const trend = (wl7DaysData.win || 0) - (wl7DaysData.lose || 0);
+
+            const openDotaEstimatedMmr = profileData.mmr_estimate?.estimate;
+            const finalMmr = openDotaEstimatedMmr || estimateMmrFromTier(profileData.rank_tier || 0);
+
+            return {
+              id,
+              steam_id: entry.steam_id,
+              name: profileData.profile?.personaname || entry.name,
+              avatar: profileData.profile?.avatarfull || 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg',
+              rankTier: profileData.rank_tier || 0,
+              leaderboardRank: entry.leaderboard_rank ?? (profileData.leaderboard_rank || null),
+              winRate,
+              mmr: finalMmr,
+              trend,
+              isOfficial: false,
+            };
+          }
+
+          // Official leaderboard entry (no steam_id) — use DB data as-is
+          officialIndex++;
           return {
-            id,
-            steam_id: String(id),
-            name: profileData.profile?.personaname || `Gracz #${id}`,
-            avatar: profileData.profile?.avatarfull || 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg',
-            rankTier: profileData.rank_tier || 0,
-            leaderboardRank: profileData.leaderboard_rank || null,
-            winRate,
-            mmr: finalMmr,
-            trend,
+            id: -(officialIndex), // unique negative key
+            steam_id: entry.steam_id ?? '',
+            name: entry.name,
+            avatar: entry.avatar ?? 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg',
+            rankTier: 0,
+            leaderboardRank: entry.leaderboard_rank ?? null,
+            winRate: '0%',
+            mmr: 0,
+            trend: 0,
+            isOfficial: true,
           };
         })
       );
 
-      players = data.sort((a, b) => b.mmr - a.mmr);
+      // Sort: leaderboardRank ASC first, then rankTier DESC for non-leaderboard
+      players = results.sort((a, b) => {
+        const aHasRank = a.leaderboardRank !== null && a.leaderboardRank > 0;
+        const bHasRank = b.leaderboardRank !== null && b.leaderboardRank > 0;
+        if (aHasRank && !bHasRank) return -1;
+        if (!aHasRank && bHasRank) return 1;
+        if (aHasRank && bHasRank) return a.leaderboardRank! - b.leaderboardRank!;
+        return b.rankTier - a.rankTier;
+      });
     }
   } catch (error) {
     console.error("Błąd ładowania danych na serwerze:", error);
@@ -96,12 +126,15 @@ export default async function RankingPage() {
       <section className="relative z-10 max-w-7xl mx-auto px-6 pt-[30px] pb-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-red-600/10 rounded-xl flex items-center justify-center text-red-500 border border-red-500/20"><Trophy className="w-6 h-6" /></div>
+            <div className="w-16 h-16 bg-red-600/10 rounded-xl flex items-center justify-center text-red-500 border border-red-500/20"><Trophy className="w-6 h-6" /></div>
             <div>
               <h1 className="text-4xl font-extrabold tracking-tight">Ranking</h1>
-              <p className="text-slate-400 text-base">Najlepsi polscy gracze w naszej społeczności.</p>
+              <p className="text-slate-400 text-xl">Najlepsi polscy gracze w naszej społeczności.</p>
               <p className="text-slate-500 text-sm mt-2 flex items-center gap-1.5">
                 <ShieldAlert className="w-3.5 h-3.5" /> Profil gracza musi być ustawiony jako publiczny w ustawieniach gry Dota 2.
+              </p>
+              <p className="text-slate-500 text-sm mt-1.5 flex items-center gap-1.5">
+                <Info className="w-3.5 h-3.5" /> Lista top 5000 graczy z Polski pobierana jest z oficjalnego rankingu Dota 2 (narodowość: Polska). Z listy usunięto graczy, którzy ustawili polską flagę &bdquo;dla beki&rdquo;.
               </p>
             </div>
           </div>

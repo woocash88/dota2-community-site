@@ -22,3 +22,6 @@
 # css
 - Use slide-in `::before` pseudo-element animation for all skewed buttons: nav tiles slide in `#3E3C40`, hero buttons slide in `#141414` (both use `right: 100%` → `left: 0; right: 0` transition). Confidence: 0.65
 
+# supabase
+- Use the `ranking_leaderboard` table instead of the `players` table for all Supabase operations throughout the project. Confidence: 0.65
+

@@ -180,7 +180,7 @@ export default function AdminPage() {
   const [basherEditingId, setBasherEditingId] = useState<string | null>(null);
 
   // ── Ranking management state ──
-  const [rankPlayers, setRankPlayers] = useState<{ steam_id: string; created_at: string }[]>([]);
+  const [rankPlayers, setRankPlayers] = useState<{ id: string; steam_id: string; created_at: string }[]>([]);
   const [rankLoading, setRankLoading] = useState(false);
   const [rankSearch, setRankSearch] = useState('');
   const [rankDeleting, setRankDeleting] = useState<string | null>(null);
@@ -2004,7 +2004,7 @@ export default function AdminPage() {
                   )
                   .map((player) => (
                     <div
-                      key={player.steam_id}
+                      key={player.id}
                       className="bg-slate-900/20 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center hover:bg-slate-800/30 transition-all"
                     >
                       <div className="flex-1 min-w-0">
