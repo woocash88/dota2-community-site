@@ -28,10 +28,10 @@ export async function POST(request: Request) {
       { url: publicUrlData?.publicUrl ?? null },
       { status: 200 },
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Błąd Hof banner upload:', err);
     return NextResponse.json(
-      { error: err.message || 'Błąd przesyłania pliku' },
+      { error: err instanceof Error ? err.message : 'Błąd przesyłania pliku' },
       { status: 500 },
     );
   }

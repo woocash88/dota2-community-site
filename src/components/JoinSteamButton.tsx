@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 
 export default function JoinSteamButton() {
   const [hidden, setHidden] = useState(true);
@@ -15,8 +16,9 @@ export default function JoinSteamButton() {
   if (hidden) return null;
 
   return (
-    <a
+    <Link
       href="/api/auth/steam"
+      prefetch={false}
       className="inline-flex flex-col items-center gap-3 bg-gradient-to-r from-white/[0.03] to-white/[0.08] border border-white/10 hover:border-red-500/30 hover:from-red-950/20 hover:to-red-900/10 px-6 py-4 rounded-2xl text-base font-bold transition-all group backdrop-blur-sm shadow-xl"
     >
       <span className="text-slate-200 group-hover:text-white transition-colors">Dołącz do rankingu</span>
@@ -25,6 +27,6 @@ export default function JoinSteamButton() {
         alt="Steam"
         className="h-10 w-auto group-hover:scale-105 transition-transform"
       />
-    </a>
+    </Link>
   );
 }

@@ -40,14 +40,14 @@ export default async function RootLayout({
 }>) {
   const settings = await getSettings();
   const fontFamily = settings.font_family || 'Logik';
-  const customFonts = settings.custom_fonts || [];
+  const customFonts = (settings.custom_fonts || []) as { name: string; base64: string }[];
 
   const googleFonts = ['Inter', 'Roboto', 'Poppins', 'Montserrat'];
   const isGoogleFont = googleFonts.includes(fontFamily);
 
   // Generate CSS for custom fonts
   const fontStyles = customFonts
-    .map((font: any) => `
+    .map((font) => `
       @font-face {
         font-family: '${font.name}';
         src: url(${font.base64}) format('woff2');

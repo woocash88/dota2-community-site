@@ -94,14 +94,15 @@ export default function Navbar() {
               </span>
             </Link>
             {pdlLinked === false && (
-              <a
+              <Link
                 href="/api/auth/steam"
+                prefetch={false}
                 className="btn-nav-tile text-lg tracking-wider px-4 py-2.5 not-italic hidden sm:inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap"
               >
                 <span className="flex items-center gap-1.5 not-italic">
                   Dołącz <Users className="w-3.5 h-3.5" />
                 </span>
-              </a>
+              </Link>
             )}
           </div>
         </div>

@@ -2,9 +2,30 @@
 
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { supabase } from '@/lib/supabase';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
+
+const ALLOWED_ADMIN_EMAILS = ['voocash.s@gmail.com', 'wilq.wdz@gmail.com'];
+
+async function checkAdminAuth() {
+  const supabaseClient = await createServerSupabaseClient();
+  const { data: { user } } = await supabaseClient.auth.getUser();
+
+  if (!user) {
+    throw new Error('Unauthenticated: No active session found.');
+  }
+
+  const isAuthorized = ALLOWED_ADMIN_EMAILS.includes(user.email ?? '');
+  if (!isAuthorized) {
+    throw new Error('Unauthorized: You do not have administrator permissions.');
+  }
+
+  return user;
+}
 
 export async function getRankPlayers() {
   try {
+    await checkAdminAuth();
+
     const { data, error } = await supabaseAdmin
       .from('ranking_leaderboard')
       .select('id, steam_id, name, created_at')
@@ -23,15 +44,18 @@ export async function getRankPlayers() {
     return { success: true as const, data: normalized };
   } catch (err: unknown) {
     console.error('Server action — getRankPlayers:', err);
+    const isAuthError = err instanceof Error && (err.message.startsWith('Unauthenticated') || err.message.startsWith('Unauthorized'));
     return {
       success: false as const,
-      error: err instanceof Error ? err.message : JSON.stringify(err),
+      error: isAuthError ? (err as Error).message : 'Wystąpił błąd podczas pobierania graczy z rankingu.',
     };
   }
 }
 
 export async function deleteRankPlayer(steamId: string) {
   try {
+    await checkAdminAuth();
+
     const { error } = await supabaseAdmin
       .from('ranking_leaderboard')
       .delete()
@@ -42,9 +66,10 @@ export async function deleteRankPlayer(steamId: string) {
     return { success: true as const };
   } catch (err: unknown) {
     console.error('Server action — deleteRankPlayer:', err);
+    const isAuthError = err instanceof Error && (err.message.startsWith('Unauthenticated') || err.message.startsWith('Unauthorized'));
     return {
       success: false as const,
-      error: err instanceof Error ? err.message : JSON.stringify(err),
+      error: isAuthError ? (err as Error).message : 'Wystąpił błąd podczas usuwania gracza z rankingu.',
     };
   }
 }
@@ -56,6 +81,8 @@ export async function addStreamer(formData: {
   position: number;
 }) {
   try {
+    await checkAdminAuth();
+
     const { error } = await supabaseAdmin
       .from('streamers')
       .insert([{
@@ -70,9 +97,10 @@ export async function addStreamer(formData: {
     return { success: true as const };
   } catch (err: unknown) {
     console.error('Server action — addStreamer:', err);
+    const isAuthError = err instanceof Error && (err.message.startsWith('Unauthenticated') || err.message.startsWith('Unauthorized'));
     return {
       success: false as const,
-      error: err instanceof Error ? err.message : JSON.stringify(err),
+      error: isAuthError ? (err as Error).message : 'Wystąpił błąd podczas dodawania streamera.',
     };
   }
 }
@@ -82,6 +110,8 @@ export async function updateStreamer(
   data: { nick: string; motto: string; stream_url: string },
 ) {
   try {
+    await checkAdminAuth();
+
     const { error } = await supabaseAdmin
       .from('streamers')
       .update({
@@ -96,15 +126,18 @@ export async function updateStreamer(
     return { success: true as const };
   } catch (err: unknown) {
     console.error('Server action — updateStreamer:', err);
+    const isAuthError = err instanceof Error && (err.message.startsWith('Unauthenticated') || err.message.startsWith('Unauthorized'));
     return {
       success: false as const,
-      error: err instanceof Error ? err.message : JSON.stringify(err),
+      error: isAuthError ? (err as Error).message : 'Wystąpił błąd podczas aktualizacji streamera.',
     };
   }
 }
 
 export async function deleteStreamer(id: string) {
   try {
+    await checkAdminAuth();
+
     const { error } = await supabaseAdmin
       .from('streamers')
       .delete()
@@ -115,15 +148,18 @@ export async function deleteStreamer(id: string) {
     return { success: true as const };
   } catch (err: unknown) {
     console.error('Server action — deleteStreamer:', err);
+    const isAuthError = err instanceof Error && (err.message.startsWith('Unauthenticated') || err.message.startsWith('Unauthorized'));
     return {
       success: false as const,
-      error: err instanceof Error ? err.message : JSON.stringify(err),
+      error: isAuthError ? (err as Error).message : 'Wystąpił błąd podczas usuwania streamera.',
     };
   }
 }
 
 export async function getContentPage(slug: string) {
   try {
+    await checkAdminAuth();
+
     const { data, error } = await supabase
       .from('news')
       .select('id, title, content, created_at')
@@ -139,12 +175,18 @@ export async function getContentPage(slug: string) {
     };
   } catch (err: unknown) {
     console.error('Server action — getContentPage:', err);
-    return { success: false as const, error: err instanceof Error ? err.message : JSON.stringify(err) };
+    const isAuthError = err instanceof Error && (err.message.startsWith('Unauthenticated') || err.message.startsWith('Unauthorized'));
+    return {
+      success: false as const,
+      error: isAuthError ? (err as Error).message : 'Wystąpił błąd podczas pobierania treści strony.',
+    };
   }
 }
 
 export async function upsertContentPage(slug: string, content: string) {
   try {
+    await checkAdminAuth();
+
     // Check if row exists
     const { data: existing } = await supabase
       .from('news')
@@ -169,12 +211,18 @@ export async function upsertContentPage(slug: string, content: string) {
     return { success: true as const };
   } catch (err: unknown) {
     console.error('Server action — upsertContentPage:', err);
-    return { success: false as const, error: err instanceof Error ? err.message : JSON.stringify(err) };
+    const isAuthError = err instanceof Error && (err.message.startsWith('Unauthenticated') || err.message.startsWith('Unauthorized'));
+    return {
+      success: false as const,
+      error: isAuthError ? (err as Error).message : 'Wystąpił błąd podczas zapisywania treści strony.',
+    };
   }
 }
 
 export async function deleteContentPage(slug: string) {
   try {
+    await checkAdminAuth();
+
     const { error } = await supabase
       .from('news')
       .delete()
@@ -186,12 +234,18 @@ export async function deleteContentPage(slug: string) {
     return { success: true as const };
   } catch (err: unknown) {
     console.error('Server action — deleteContentPage:', err);
-    return { success: false as const, error: err instanceof Error ? err.message : JSON.stringify(err) };
+    const isAuthError = err instanceof Error && (err.message.startsWith('Unauthenticated') || err.message.startsWith('Unauthorized'));
+    return {
+      success: false as const,
+      error: isAuthError ? (err as Error).message : 'Wystąpił błąd podczas usuwania strony.',
+    };
   }
 }
 
 export async function uploadNewsImage(formData: FormData) {
   try {
+    await checkAdminAuth();
+
     const file = formData.get('file') as File | null;
     if (!file) throw new Error('No file provided');
 
@@ -216,9 +270,10 @@ export async function uploadNewsImage(formData: FormData) {
     return { success: true as const, publicUrl: publicUrlData.publicUrl };
   } catch (err: unknown) {
     console.error('Server action — uploadNewsImage:', err);
+    const isAuthError = err instanceof Error && (err.message.startsWith('Unauthenticated') || err.message.startsWith('Unauthorized'));
     return {
       success: false as const,
-      error: err instanceof Error ? err.message : JSON.stringify(err),
+      error: isAuthError ? (err as Error).message : 'Wystąpił błąd podczas przesyłania zdjęcia.',
     };
   }
 }
@@ -227,6 +282,8 @@ export async function updateStreamerPositions(
   updates: { id: string; position: number }[],
 ) {
   try {
+    await checkAdminAuth();
+
     for (const { id, position } of updates) {
       const { error } = await supabaseAdmin
         .from('streamers')
@@ -237,9 +294,10 @@ export async function updateStreamerPositions(
     return { success: true as const };
   } catch (err: unknown) {
     console.error('Server action — updateStreamerPositions:', err);
+    const isAuthError = err instanceof Error && (err.message.startsWith('Unauthenticated') || err.message.startsWith('Unauthorized'));
     return {
       success: false as const,
-      error: err instanceof Error ? err.message : JSON.stringify(err),
+      error: isAuthError ? (err as Error).message : 'Wystąpił błąd podczas aktualizacji pozycji streamerów.',
     };
   }
 }

@@ -296,7 +296,7 @@ export default function Home() {
 
                 <div>
                   <div className="text-slate-200 text-base mb-1.5">{review.headline}</div>
-                  <div className="text-slate-400 text-sm leading-relaxed">"{review.text}"</div>
+                  <div className="text-slate-400 text-sm leading-relaxed">&ldquo;{review.text}&rdquo;</div>
                 </div>
               </a>
               </BorderGlow>

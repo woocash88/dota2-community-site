@@ -25,9 +25,9 @@ export async function POST(request: Request) {
 
     if (result.error) throw result.error;
     return NextResponse.json({ success: true, data: result.data }, { status: 200 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Błąd Hof POST:', err);
-    return NextResponse.json({ error: err.message || 'Błąd zapisu turnieju' }, { status: 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Błąd zapisu turnieju' }, { status: 500 });
   }
 }
 
@@ -46,9 +46,9 @@ export async function DELETE(request: Request) {
 
     if (error) throw error;
     return NextResponse.json({ success: true }, { status: 200 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Błąd Hof DELETE:', err);
-    return NextResponse.json({ error: err.message || 'Błąd usuwania turnieju' }, { status: 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Błąd usuwania turnieju' }, { status: 500 });
   }
 }
 
@@ -67,8 +67,8 @@ export async function PATCH(request: Request) {
 
     if (error) throw error;
     return NextResponse.json({ success: true }, { status: 200 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Błąd Hof PATCH:', err);
-    return NextResponse.json({ error: err.message || 'Błąd publikacji turnieju' }, { status: 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Błąd publikacji turnieju' }, { status: 500 });
   }
 }
