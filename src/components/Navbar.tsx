@@ -3,10 +3,8 @@
 import { useEffect, useState } from 'react';
 import { Users, Mail } from 'lucide-react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
 
 export default function Navbar() {
-  const [discordLink, setDiscordLink] = useState('https://discord.gg/ZxgmF7Kr4t');
   const [pdlLinked, setPdlLinked] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -14,28 +12,6 @@ export default function Navbar() {
       .then((r) => r.json())
       .then((data) => setPdlLinked(data.linked === true))
       .catch(() => setPdlLinked(false));
-  }, []);
-
-  useEffect(() => {
-    async function fetchDiscordLink() {
-      try {
-        const { data, error } = await supabase
-          .from('news')
-          .select('*')
-          .eq('category', 'SystemSettings')
-          .eq('title', 'global_settings')
-          .maybeSingle();
-        if (!error && data && data.content) {
-          const val = JSON.parse(data.content);
-          if (val.discord_link) {
-            setDiscordLink(val.discord_link);
-          }
-        }
-      } catch {
-        // Ignorujemy błędy i zostajemy przy domyślnym linku
-      }
-    }
-    fetchDiscordLink();
   }, []);
 
   const navLinks = [
@@ -94,14 +70,15 @@ export default function Navbar() {
               </span>
             </Link>
             {pdlLinked === false && (
-              <a
+              <Link
                 href="/api/auth/steam"
+                prefetch={false}
                 className="btn-nav-tile text-lg tracking-wider px-4 py-2.5 not-italic hidden sm:inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap"
               >
                 <span className="flex items-center gap-1.5 not-italic">
                   Dołącz <Users className="w-3.5 h-3.5" />
                 </span>
-              </a>
+              </Link>
             )}
           </div>
         </div>

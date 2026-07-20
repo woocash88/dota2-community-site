@@ -1,8 +1,26 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
+
+const ALLOWED_ADMIN_EMAILS = ['voocash.s@gmail.com', 'wilq.wdz@gmail.com'];
+
+async function verifyAdmin() {
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user || !ALLOWED_ADMIN_EMAILS.includes(user.email ?? '')) {
+    return false;
+  }
+  return true;
+}
 
 export async function POST(request: Request) {
   try {
+    const isAdmin = await verifyAdmin();
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
     const fileName = formData.get('fileName') as string | null;
@@ -28,10 +46,10 @@ export async function POST(request: Request) {
       { url: publicUrlData?.publicUrl ?? null },
       { status: 200 },
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Błąd Hof banner upload:', err);
     return NextResponse.json(
-      { error: err.message || 'Błąd przesyłania pliku' },
+      { error: 'Wystąpił błąd podczas przesyłania pliku.' },
       { status: 500 },
     );
   }

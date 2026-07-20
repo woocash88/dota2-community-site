@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { after, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { sign } from '@/lib/session';
 
@@ -81,6 +81,33 @@ export async function GET(request: Request) {
   if (upsertError) {
     console.error('Błąd upsertu do ranking_leaderboard:', upsertError.message);
     return NextResponse.json({ error: 'Nie udało się zapisać gracza w bazie danych.' }, { status: 500 });
+  }
+
+  // --- Trigger scrapera GitHub dla graczy z top 5000 (nieblokujące) ---
+  if (openDotaRank !== null) {
+    after(async () => {
+      const token = process.env.GITHUB_ACCESS_TOKEN;
+      if (!token) {
+        console.warn('GITHUB_ACCESS_TOKEN nie jest ustawiony – pomijam dispatch do scrapera.');
+        return;
+      }
+      try {
+        const ghRes = await fetch('https://api.github.com/repos/woocash88/dota2-pl-leaderboard/dispatches', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/vnd.github+json',
+            'X-GitHub-Api-Version': '2022-11-28',
+          },
+          body: JSON.stringify({ event_type: 'trigger-scraper' }),
+        });
+        if (!ghRes.ok) {
+          console.error('GitHub dispatch nie powiódł się:', ghRes.status, await ghRes.text());
+        }
+      } catch (e) {
+        console.error('Błąd dispatchu do GitHub:', e);
+      }
+    });
   }
 
   // --- Set session & redirect ---

@@ -50,7 +50,13 @@ export default function KontaktPage() {
 
       {/* CONTACT FORM SECTION */}
       <section className="relative z-10 max-w-4xl mx-auto px-6 pt-[30px] pb-10">
-        <div className="text-center mb-10">
+        <img
+          src="/images/tower.png"
+          alt=""
+          aria-hidden="true"
+          className="hidden lg:block absolute right-0 top-1/2 -translate-y-1/2 translate-x-2/3 h-[100%] w-auto object-contain opacity-70 pointer-events-none select-none z-0"
+        />
+        <div className="text-center mb-10 relative z-10">
           <div className="w-12 h-12 bg-red-600/10 rounded-xl flex items-center justify-center text-red-500 border border-red-500/20 mx-auto mb-4">
             <Mail className="w-6 h-6" />
           </div>
@@ -58,7 +64,7 @@ export default function KontaktPage() {
           <p className="text-slate-400 text-sm">Masz pytania dotyczące inhouse lobby lub turniejów? Napisz do nas!</p>
         </div>
 
-        <div className="bg-slate-900/20 border border-white/5 rounded-3xl p-8 backdrop-blur-md shadow-2xl relative overflow-hidden">
+        <div className="bg-slate-900/20 border border-white/5 rounded-3xl p-8 backdrop-blur-md shadow-2xl relative z-10 overflow-hidden">
           
           {status === 'success' ? (
             <div className="text-center py-8">

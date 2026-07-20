@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Trophy, Shield, TrendingUp, Star } from 'lucide-react';
+import { Star } from 'lucide-react';
 import ClientLightPillar from '@/components/ClientLightPillar';
 import Navbar from '@/components/Navbar';
 import SplitText from '@/components/SplitText';
+import WardClicker from '@/components/WardClicker';
 import BorderGlow from '@/components/ui/BorderGlow';
 import { supabase } from '@/lib/supabase';
 
@@ -31,10 +32,6 @@ export default function Home() {
   }, []);
   const [discordCount, setDiscordCount] = useState(2400);
   const [partnerLink, setPartnerLink] = useState('https://dreammachines.pl/pl/?utm_content=dota2');
-  const [twitchLink, setTwitchLink] = useState('');
-  const [youtubeLink, setYoutubeLink] = useState('');
-  const [instagramLink, setInstagramLink] = useState('');
-  const [discordLink, setDiscordLink] = useState('https://discord.gg/ZxgmF7Kr4t');
 
   useEffect(() => {
     async function fetchAll() {
@@ -60,10 +57,6 @@ export default function Home() {
         if (!error && data && data.content) {
           const val = JSON.parse(data.content);
           if (val.partner_link) setPartnerLink(val.partner_link);
-          if (val.twitch_link) setTwitchLink(val.twitch_link);
-          if (val.youtube_link) setYoutubeLink(val.youtube_link);
-          if (val.instagram_link) setInstagramLink(val.instagram_link);
-          if (val.discord_link) setDiscordLink(val.discord_link);
         }
       } catch {
         // fallback
@@ -73,7 +66,7 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="relative bg-[#050505] text-slate-100 overflow-x-hidden" style={{ overflowY: 'visible' }}>
+    <main className="relative bg-[#050505] text-slate-100 overflow-x-clip">
       
       {/* ─── TECH GRID OVERLAY ─── */}
       <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none" />
@@ -164,7 +157,7 @@ export default function Home() {
             </p>
 
             {/* ─── CALL-TO-ACTION BUTTONS ─── */}
-            <div className="flex flex-wrap justify-center gap-6">
+            <div className="flex flex-wrap justify-center gap-6 mt-12">
               <div className="glow-container">
                 <a href="https://discord.com/invite/ZxgmF7Kr4t" target="_blank" rel="noopener noreferrer" className="btn-hero h-12 flex items-center px-8 gap-3 text-xl">
                   <span>DOŁĄCZ DO NAS <img src="/images/discord_logo.png" alt="Discord" className="w-7 h-7 object-contain shrink-0" /></span>
@@ -180,52 +173,63 @@ export default function Home() {
         </section>
 
         {/* ─── SKEWED STATS BAR (12°) ─── */}
-        <div className="relative mt-20 z-10 max-w-4xl mx-auto px-4">
-          <div className="bg-[#111]/60 border -skew-x-[12deg] shadow-2xl overflow-hidden flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-white/10 stats-glow h-22">
+        <div className="relative mt-6 z-10 max-w-[1088px] mx-auto px-6">
+          <div className="bg-[#111]/60 border -skew-x-[12deg] shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-5 divide-y md:divide-y-0 md:divide-x divide-white/10 stats-glow h-auto md:h-22">
 
             {/* Stat 1: Discord */}
-            <div className="flex-1 hover:bg-white/[0.02] transition-colors flex">
-              <div className="flex-1 py-2 px-4 flex flex-row items-center justify-center gap-4 skew-x-[12deg] text-left">
-                <Users className="w-8 h-8 text-red-500 flex-shrink-0" />
+            <div className="hover:bg-white/[0.02] transition-colors flex">
+              <div className="flex-1 py-3 md:py-2 px-4 flex flex-row items-center justify-center gap-3 skew-x-[12deg] text-left">
+                <img src="/images/statsbar_1.png" alt="Społeczność Discord" className="h-11 w-11 object-contain flex-shrink-0" />
                 <div className="flex flex-col justify-center">
-                  <div className="text-xl font-black text-white leading-none">{discordCount}+</div>
-                  <div className="text-xs font-bold tracking-wider text-slate-400 mt-1 uppercase">Użytkowników</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Stat 2: Tournaments */}
-            <div className="flex-1 hover:bg-white/[0.02] transition-colors flex">
-              <div className="flex-1 py-2 px-4 flex flex-row items-center translate-x-3 justify-center gap-4 skew-x-[12deg] text-left">
-                <Trophy className="w-8 h-8 text-red-500 flex-shrink-0" />
-                <div className="flex flex-col justify-center">
-                  <div className="text-xl font-black text-white leading-none">Regularne</div>
-                  <div className="text-xs font-bold tracking-wider text-slate-400 mt-1 uppercase">Turnieje dla społeczności</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Stat 3: PDL */}
-            <div className="flex-1 hover:bg-white/[0.02] transition-colors flex">
-              <div className="flex-1 py-2 px-4 flex flex-row items-center justify-center gap-4 skew-x-[12deg] text-left">
-                <Shield className="w-8 h-8 text-red-500 flex-shrink-0" />
-                <div className="flex flex-col justify-center">
-                  <div className="text-xl font-black text-white leading-none">PDL</div>
-                  <div className="text-xs font-bold tracking-wider text-slate-400 mt-1 uppercase">
-                    <div>Polska Liga</div>
-                    <div>Dota 2</div>
+                  <div className="text-lg font-black text-white leading-none whitespace-nowrap">{discordCount}+</div>
+                  <div className="text-[11px] font-bold tracking-wider text-slate-400 mt-1 uppercase whitespace-nowrap">
+                    <div>Użytkowników</div>
+                    <div>społeczności</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Stat 4: Community */}
-            <div className="flex-1 hover:bg-white/[0.02] transition-colors flex">
-              <div className="flex-1 py-2 px-4 flex flex-row items-center justify-center gap-4 skew-x-[12deg] text-left">
-                <TrendingUp className="w-8 h-8 text-red-500 flex-shrink-0" />
+            {/* Stat 2: Tournaments */}
+            <div className="hover:bg-white/[0.02] transition-colors flex">
+              <div className="flex-1 py-3 md:py-2 px-4 flex flex-row items-center justify-center gap-3 skew-x-[12deg] text-left">
+                <img src="/images/statsbar_2.png" alt="Turnieje" className="h-11 w-11 object-contain flex-shrink-0" />
                 <div className="flex flex-col justify-center">
-                  <div className="text-xl font-black text-white uppercase tracking-tight leading-none">Rozwijająca</div>
-                  <div className="text-xs font-bold tracking-wider text-slate-400 mt-1 uppercase">Się społeczność</div>
+                  <div className="text-lg font-black text-white uppercase tracking-tight leading-none whitespace-nowrap">Regularne</div>
+                  <div className="text-[11px] font-bold tracking-wider text-slate-400 mt-1 uppercase whitespace-nowrap">Turnieje dla <br /> każdego</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Stat 3: PDL */}
+            <div className="hover:bg-white/[0.02] transition-colors flex">
+              <div className="flex-1 py-3 md:py-2 px-4 flex flex-row items-center justify-center gap-3 skew-x-[12deg] text-left">
+                <img src="/images/statsbar_3.png" alt="PDL" className="h-11 w-11 object-contain flex-shrink-0" />
+                <div className="flex flex-col justify-center">
+                  <div className="text-lg font-black text-white leading-none whitespace-nowrap">PDL</div>
+                  <div className="text-[11px] font-bold tracking-wider text-slate-400 mt-1 uppercase whitespace-nowrap">Polska Liga Dota 2</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Stat 4: LANs & offline events */}
+            <div className="hover:bg-white/[0.02] transition-colors flex">
+              <div className="flex-1 py-3 md:py-2 px-4 flex flex-row items-center justify-center gap-3 skew-x-[12deg] text-left">
+                <img src="/images/statsbar_4.png" alt="LANy i wydarzenia offline" className="h-11 w-11 object-contain flex-shrink-0" />
+                <div className="flex flex-col justify-center">
+                  <div className="text-lg font-black text-white uppercase tracking-tight leading-none whitespace-nowrap">LANy</div>
+                  <div className="text-[11px] font-bold tracking-wider text-slate-400 mt-1 uppercase whitespace-nowrap">oraz wydarzenia <br /> offline</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Stat 5: Community */}
+            <div className="hover:bg-white/[0.02] transition-colors flex">
+              <div className="flex-1 py-3 md:py-2 px-4 flex flex-row items-center justify-center gap-3 skew-x-[12deg] text-left">
+                <img src="/images/statsbar_5.png" alt="Przyjazna społeczność" className="h-11 w-11 object-contain flex-shrink-0" />
+                <div className="flex flex-col justify-center">
+                  <div className="text-lg font-black text-white uppercase tracking-tight leading-none whitespace-nowrap">Przyjazna</div>
+                  <div className="text-[11px] font-bold tracking-wider text-slate-400 mt-1 uppercase whitespace-nowrap">Społeczność</div>
                 </div>
               </div>
             </div>
@@ -234,10 +238,12 @@ export default function Home() {
         </div>
       </div>
 
+      {/* ─── WARD CLICKER ─── */}
+      <WardClicker />
+
       {/* ─── TESTIMONIALS MARQUEE ─── */}
       <section className="relative z-10 w-full mt-12 mb-10 flex flex-col items-center">
         <div className="max-w-7xl mx-auto px-6 mb-6 text-center w-full">
-          <p className="text-slate-500 text-xs font-bold uppercase tracking-[0.3em]">Co o nas mówią</p>
         </div>
 
         <div
@@ -296,7 +302,7 @@ export default function Home() {
 
                 <div>
                   <div className="text-slate-200 text-base mb-1.5">{review.headline}</div>
-                  <div className="text-slate-400 text-sm leading-relaxed">"{review.text}"</div>
+                  <div className="text-slate-400 text-sm leading-relaxed">&ldquo;{review.text}&rdquo;</div>
                 </div>
               </a>
               </BorderGlow>
